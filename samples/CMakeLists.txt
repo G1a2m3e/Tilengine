@@ -74,3 +74,6 @@ add_executable(forest
 
 add_executable(querylayer
      QueryLayer.c)
+
+add_executable(my_jump_adventure
+     MyJumpAdventure.c)

@@ -1,4 +1,6 @@
 # misc
+.cache/
+.vscode/
 .svn/
 .vs/
 map2tileset/
@@ -25,6 +27,7 @@ x64_Release/
 *.dll
 *.htm
 upload.sh
+build/
 
 docs/
 lib/

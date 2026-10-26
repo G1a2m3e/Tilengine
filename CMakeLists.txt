@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.6)
 
 project(Tilengine)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 file(GLOB SOURCES
      "src/*.c"
 )
-
 
 # main library
 list(REMOVE_ITEM SOURCES "src/Test.c")
