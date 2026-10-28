@@ -323,7 +323,7 @@ int main(int argc, char *argv[]) {
   update_positions();
 
   /* window main loop, block until closed */
-  TLN_CreateWindow(NULL, CWF_S1);
+  TLN_CreateWindow(NULL, CWF_FULLSCREEN);
   TLN_SetMainTask(main_loop);
 
   /* release resources */

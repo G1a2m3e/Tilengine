@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="70">
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="17" nextobjectid="72">
  <tileset firstgid="1" source="Terrain.tsx"/>
  <tileset firstgid="243" source="player_Idle.tsx"/>
  <tileset firstgid="254" source="Apple.tsx"/>
- <tileset firstgid="322" source="Pineapple.tsx"/>
- <tileset firstgid="339" source="Orange.tsx"/>
- <tileset firstgid="356" source="Strawberry.tsx"/>
- <imagelayer id="5" name="图像图层 1" repeatx="1" repeaty="1">
+ <tileset firstgid="271" source="Pineapple.tsx"/>
+ <tileset firstgid="288" source="Orange.tsx"/>
+ <tileset firstgid="305" source="Strawberry.tsx"/>
+ <imagelayer id="5" name="background" repeatx="1" repeaty="1">
   <image source="Background/Purple.png" width="64" height="64"/>
  </imagelayer>
- <layer id="1" name="图块层 1" width="35" height="15">
+ <layer id="1" name="maps" width="35" height="15">
   <data encoding="csv">
 92,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,1073741939,0,
 113,36,37,35,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,111,0,
@@ -21,29 +21,41 @@
 113,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,111,0,
 113,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2147483691,2147483690,2147483689,2147483688,111,0,
 113,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,111,0,
-113,40,41,42,0,0,0,0,0,0,0,0,0,7,8,8,8,8,8,8,8,8,0,0,0,0,0,0,0,0,0,0,0,133,93,
-113,0,0,0,0,0,100,100,0,0,0,0,0,29,30,30,30,30,30,30,30,30,0,0,0,0,0,0,0,7,8,8,8,9,111,
+113,40,41,42,0,0,0,0,0,0,0,0,0,7,8,8,8,8,8,8,8,9,0,0,0,0,0,0,0,0,0,0,0,133,93,
+113,0,0,0,0,0,100,100,0,0,0,0,0,29,30,30,30,30,30,30,30,31,0,0,0,0,0,0,0,7,8,8,8,9,111,
 113,0,0,0,0,0,0,0,100,100,100,0,7,33,30,30,30,30,30,30,30,30,7,8,8,9,0,0,0,29,30,30,30,31,111,
 113,0,0,0,0,0,0,0,0,7,8,8,8,8,33,11,30,30,30,30,30,30,30,30,30,7,8,8,8,8,9,30,30,35,111,
 114,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,111
 </data>
  </layer>
- <objectgroup id="2" name="对象层 1">
-  <object id="51" gid="243" x="262" y="160" width="32" height="32"/>
-  <object id="53" gid="254" x="114" y="58.6667" width="32" height="32"/>
-  <object id="54" gid="254" x="100" y="84" width="32" height="32"/>
-  <object id="55" gid="254" x="128" y="84.6667" width="32" height="32"/>
-  <object id="56" gid="254" x="88" y="106" width="32" height="32"/>
-  <object id="57" gid="254" x="114" y="105.333" width="32" height="32"/>
-  <object id="58" gid="254" x="143.333" y="105.333" width="32" height="32"/>
-  <object id="59" gid="322" x="491.333" y="69.3333" width="32" height="32"/>
-  <object id="60" gid="322" x="491.333" y="98" width="32" height="32"/>
-  <object id="61" gid="322" x="491.333" y="126" width="32" height="32"/>
-  <object id="62" gid="339" x="370.667" y="58" width="32" height="32"/>
-  <object id="63" gid="339" x="350.667" y="83.3333" width="32" height="32"/>
-  <object id="64" gid="339" x="388.667" y="82.6667" width="32" height="32"/>
-  <object id="65" gid="356" x="49.3333" y="220" width="32" height="32"/>
-  <object id="68" gid="356" x="73.3333" y="220" width="32" height="32"/>
-  <object id="69" gid="356" x="100" y="219.333" width="32" height="32"/>
- </objectgroup>
+ <group id="9" name="fruits">
+  <objectgroup id="15" name="pineapples">
+   <object id="59" gid="271" x="491.333" y="69.3333" width="32" height="32"/>
+   <object id="60" gid="271" x="491.333" y="98" width="32" height="32"/>
+   <object id="61" gid="271" x="491.333" y="126" width="32" height="32"/>
+  </objectgroup>
+  <objectgroup id="14" name="oranges">
+   <object id="62" gid="288" x="370.667" y="58" width="32" height="32"/>
+   <object id="63" gid="288" x="350.667" y="83.3333" width="32" height="32"/>
+   <object id="64" gid="288" x="388.667" y="82.6667" width="32" height="32"/>
+  </objectgroup>
+  <objectgroup id="13" name="strawberrys">
+   <object id="65" gid="305" x="49.3333" y="220" width="32" height="32"/>
+   <object id="68" gid="305" x="73.3333" y="220" width="32" height="32"/>
+   <object id="69" gid="305" x="100" y="220" width="32" height="32"/>
+  </objectgroup>
+  <objectgroup id="2" name="apples">
+   <object id="53" gid="254" x="115.333" y="57.3334" width="32" height="32"/>
+   <object id="54" gid="254" x="101.333" y="79.3333" width="32" height="32"/>
+   <object id="55" gid="254" x="129.333" y="80" width="32" height="32"/>
+   <object id="56" gid="254" x="86.6667" y="102" width="32" height="32"/>
+   <object id="57" gid="254" x="114.667" y="102" width="32" height="32"/>
+   <object id="58" gid="254" x="142" y="101.333" width="32" height="32"/>
+  </objectgroup>
+ </group>
+ <group id="10" name="player">
+  <objectgroup id="11" name="player">
+   <object id="71" gid="243" x="268.667" y="161.333" width="32" height="32"/>
+  </objectgroup>
+ </group>
 </map>
