@@ -1,8 +1,10 @@
 #include "Tilengine.h"
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include "../src/simplexml.h"
+#include <string.h>
+/* Bridge loaded tilesets to sprites without parsing or reopening resources. */
+#include "../src/ObjectList.h"
+#include "../src/Tileset.h"
 
 #define SCREEN_WIDTH 35*16
 #define SCREEN_HEIGHT 15*16
@@ -20,98 +22,94 @@ static int max_player_x;
 static int velocity_y;
 static TLN_Tilemap world_map;
 
-/* TMX object groups may mix tilesets. Read original GIDs here because
-   TLN_LoadObjectList normalizes all objects against one tileset. */
+/* Each object layer uses one tileset, so the native loader can normalize
+   GIDs and convert tile-object coordinates to the top-left anchor. */
 #define MAX_MAP_OBJECTS 128
 static struct {
-  const char *tsx;
-  const char *image;
-  uint32_t firstgid;
+  const char *layer;
+  TLN_Tileset tileset;
   TLN_Spriteset spriteset;
 } object_assets[] = {
-    {"player_Idle.tsx", "player_Idle.png", 0, NULL},
-    {"Apple.tsx", "Fruits/Apple.png", 0, NULL},
-    {"Pineapple.tsx", "Fruits/Pineapple.png", 0, NULL},
-    {"Orange.tsx", "Fruits/Orange.png", 0, NULL},
-    {"Strawberry.tsx", "Fruits/Strawberry.png", 0, NULL},
+    {"player", NULL, NULL},
+    {"apples", NULL, NULL},
+    {"pineapples", NULL, NULL},
+    {"oranges", NULL, NULL},
+    {"strawberrys", NULL, NULL},
 };
 #define OBJECT_ASSET_COUNT (sizeof(object_assets) / sizeof(object_assets[0]))
 static struct MapObject {
-  uint32_t gid;
-  float x, y, width, height;
-  bool visible;
-} map_objects[MAX_MAP_OBJECTS], pending_object;
+  TLN_ObjectInfo info;
+  int asset;
+} map_objects[MAX_MAP_OBJECTS];
 static int num_map_objects;
-static bool object_overflow;
-static uint32_t pending_firstgid;
-static char pending_tileset_source[256];
 
-static void *read_scene_xml(SimpleXmlParser parser, SimpleXmlEvent event,
-                            const char *tag, const char *attribute,
-                            const char *value) {
-  (void)parser;
-  if (event == ADD_SUBTAG) {
-    if (strcmp(tag, "tileset") == 0) {
-      pending_firstgid = 0;
-      pending_tileset_source[0] = '\0';
-    }
-    if (strcmp(tag, "object") == 0) {
-      memset(&pending_object, 0, sizeof(pending_object));
-      pending_object.visible = true;
-    }
-  } else if (event == ADD_ATTRIBUTE) {
-    if (strcmp(tag, "tileset") == 0) {
-      if (strcmp(attribute, "firstgid") == 0)
-        pending_firstgid = (uint32_t)strtoul(value, NULL, 10);
-      else if (strcmp(attribute, "source") == 0)
-        snprintf(pending_tileset_source, sizeof(pending_tileset_source), "%s", value);
-    } else if (strcmp(tag, "object") == 0) {
-      if (strcmp(attribute, "gid") == 0)
-        pending_object.gid = (uint32_t)strtoul(value, NULL, 10);
-      else if (strcmp(attribute, "x") == 0) pending_object.x = strtof(value, NULL);
-      else if (strcmp(attribute, "y") == 0) pending_object.y = strtof(value, NULL);
-      else if (strcmp(attribute, "width") == 0) pending_object.width = strtof(value, NULL);
-      else if (strcmp(attribute, "height") == 0) pending_object.height = strtof(value, NULL);
-      else if (strcmp(attribute, "visible") == 0) pending_object.visible = atoi(value) != 0;
-    }
-  } else if (event == FINISH_ATTRIBUTES && strcmp(tag, "tileset") == 0) {
-    for (size_t i = 0; i < OBJECT_ASSET_COUNT; ++i)
-      if (strcmp(pending_tileset_source, object_assets[i].tsx) == 0)
-        object_assets[i].firstgid = pending_firstgid;
-  } else if (event == FINISH_TAG && strcmp(tag, "object") == 0 && pending_object.gid) {
-    if (num_map_objects < MAX_MAP_OBJECTS)
-      map_objects[num_map_objects++] = pending_object;
-    else
-      object_overflow = true;
+/* Tile animations use one-based frame indices. Keep an empty frame 0 so
+   the native TSX sequences can be used directly by sprite animations. */
+static TLN_Spriteset sprites_from_tileset(TLN_Tileset tileset) {
+  if (!tileset || tileset->tstype != TILESET_TILES) return NULL;
+  int count = tileset->numtiles + 1;
+  int width = tileset->width, height = tileset->height;
+  TLN_Bitmap bitmap = TLN_CreateBitmap(width, height * count, 8);
+  TLN_SpriteData *frames = calloc((size_t)count, sizeof(*frames));
+  if (!bitmap || !frames) {
+    if (bitmap) TLN_DeleteBitmap(bitmap);
+    free(frames);
+    return NULL;
   }
-  return read_scene_xml;
+  TLN_Palette palette = TLN_ClonePalette(TLN_GetTilesetPalette(tileset));
+  if (!palette) {
+    TLN_DeleteBitmap(bitmap);
+    free(frames);
+    return NULL;
+  }
+  TLN_SetBitmapPalette(bitmap, palette);
+  for (int f = 0; f < count; ++f) {
+    frames[f].y = f * height;
+    frames[f].w = width;
+    frames[f].h = height;
+    for (int y = 0; f > 0 && y < height; ++y)
+      memcpy(TLN_GetBitmapPtr(bitmap, 0, f * height + y),
+             tileset->data + ((f - 1) * height + y) * width, (size_t)width);
+  }
+  TLN_Spriteset spriteset = TLN_CreateSpriteset(bitmap, frames, count);
+  free(frames);
+  if (!spriteset) TLN_DeleteBitmap(bitmap);
+  return spriteset;
+}
+
+static void animate_object(int sprite, int asset, int tile) {
+  TLN_SequencePack pack = TLN_GetTilesetSequencePack(object_assets[asset].tileset);
+  char name[16];
+  snprintf(name, sizeof(name), "%d", tile);
+  TLN_Sequence sequence = pack ? TLN_FindSequence(pack, name) : NULL;
+  if (sequence) TLN_SetSpriteAnimation(sprite, sequence, 0);
 }
 
 static bool load_scene_objects(void) {
-  FILE *file = fopen("assets/my_jump_adventure/my_jump_adventure.tmx", "rb");
-  if (!file) return false;
-  if (fseek(file, 0, SEEK_END) != 0) { fclose(file); return false; }
-  long size = ftell(file);
-  if (size <= 0 || fseek(file, 0, SEEK_SET) != 0) { fclose(file); return false; }
-  char *xml = malloc((size_t)size);
-  if (!xml) { fclose(file); return false; }
-  bool loaded = fread(xml, 1, (size_t)size, file) == (size_t)size;
-  fclose(file);
-  SimpleXmlParser parser = loaded ? simpleXmlCreateParser(xml, size) : NULL;
-  bool ok = parser && simpleXmlParse(parser, read_scene_xml) == 0;
-  if (parser) simpleXmlDestroyParser(parser);
-  free(xml);
-  return ok && !object_overflow;
-}
-
-static int object_asset(const struct MapObject *object) {
-  uint32_t gid = object->gid & 0x0fffffff;
-  int best = -1;
-  for (size_t i = 0; i < OBJECT_ASSET_COUNT; ++i)
-    if (object_assets[i].firstgid && gid >= object_assets[i].firstgid &&
-        (best < 0 || object_assets[i].firstgid > object_assets[best].firstgid))
-      best = (int)i;
-  return best;
+  for (size_t asset = 0; asset < OBJECT_ASSET_COUNT; ++asset) {
+    TLN_ObjectList objects = TLN_LoadObjectList("my_jump_adventure.tmx",
+                                              object_assets[asset].layer);
+    if (objects == NULL) {
+      fprintf(stderr, "Failed to load object layer '%s': %s\n",
+              object_assets[asset].layer,
+              TLN_GetErrorString(TLN_GetLastError()));
+      return false;
+    }
+    object_assets[asset].tileset = objects->tileset;
+    TLN_ObjectInfo info = {0};
+    for (bool more = TLN_GetListObject(objects, &info); more;
+         more = TLN_GetListObject(objects, NULL)) {
+      if (num_map_objects == MAX_MAP_OBJECTS) {
+        fprintf(stderr, "Too many map objects (limit: %d)\n", MAX_MAP_OBJECTS);
+        TLN_DeleteObjectList(objects);
+        return false;
+      }
+      map_objects[num_map_objects].info = info;
+      map_objects[num_map_objects++].asset = (int)asset;
+    }
+    TLN_DeleteObjectList(objects);
+  }
+  return true;
 }
 
 static void free_fruits(void) {
@@ -126,33 +124,19 @@ static void free_fruits(void) {
 static bool create_fruits(void) {
   for (int i = 0; i < num_map_objects; ++i) {
     const struct MapObject *object = &map_objects[i];
-    int asset = object_asset(object);
-    if (asset <= 0 || !object->visible) continue;
+    int asset = object->asset;
+    if (asset <= 0 || !object->info.visible) continue;
     if (!object_assets[asset].spriteset) {
-      TLN_Bitmap bitmap = TLN_LoadBitmap(object_assets[asset].image);
-      if (!bitmap) return false;
-      int cols = TLN_GetBitmapWidth(bitmap) / PLAYER_SIZE;
-      int count = cols * (TLN_GetBitmapHeight(bitmap) / PLAYER_SIZE);
-      if (count <= 0) { TLN_DeleteBitmap(bitmap); return false; }
-      TLN_SpriteData *frames = calloc((size_t)count, sizeof(*frames));
-      if (!frames) { TLN_DeleteBitmap(bitmap); return false; }
-      for (int f = 0; f < count; ++f) {
-        frames[f].x = (f % cols) * PLAYER_SIZE;
-        frames[f].y = (f / cols) * PLAYER_SIZE;
-        frames[f].w = frames[f].h = PLAYER_SIZE;
-      }
-      object_assets[asset].spriteset = TLN_CreateSpriteset(bitmap, frames, count);
-      free(frames);
-      if (!object_assets[asset].spriteset) { TLN_DeleteBitmap(bitmap); return false; }
+      object_assets[asset].spriteset = sprites_from_tileset(object_assets[asset].tileset);
+      if (!object_assets[asset].spriteset) return false;
     }
-    int frame = (int)((object->gid & 0x0fffffff) - object_assets[asset].firstgid);
+    int frame = object->info.gid + 1;
     if (!TLN_ConfigSprite(i + 1, object_assets[asset].spriteset, 0) ||
         !TLN_SetSpritePicture(i + 1, frame)) return false;
-    uint32_t flags = 0;
-    if (object->gid & 0x80000000) flags |= FLAG_FLIPX;
-    if (object->gid & 0x40000000) flags |= FLAG_FLIPY;
-    TLN_SetSpriteFlags(i + 1, flags);
-    TLN_SetSpriteScaling(i + 1, object->width / PLAYER_SIZE, object->height / PLAYER_SIZE);
+    animate_object(i + 1, asset, object->info.gid);
+    TLN_SetSpriteFlags(i + 1, object->info.flags);
+    TLN_SetSpriteScaling(i + 1, (float)object->info.width / TLN_GetTileWidth(object_assets[asset].tileset),
+                         (float)object->info.height / TLN_GetTileHeight(object_assets[asset].tileset));
   }
   return true;
 }
@@ -208,9 +192,9 @@ static void update_positions(void) {
   TLN_SetLayerPosition(0, camera_x, 0);
   TLN_SetSpritePosition(0, player_x - camera_x, player_y);
   for (int i = 0; i < num_map_objects; ++i)
-    if (object_asset(&map_objects[i]) > 0 && map_objects[i].visible)
-      TLN_SetSpritePosition(i + 1, (int)map_objects[i].x - camera_x,
-                            (int)(map_objects[i].y - map_objects[i].height));
+    if (map_objects[i].asset > 0 && map_objects[i].info.visible)
+      TLN_SetSpritePosition(i + 1, map_objects[i].info.x - camera_x,
+                            map_objects[i].info.y);
 }
 
 static void main_loop(uint32_t frame) {
@@ -230,17 +214,17 @@ static void main_loop(uint32_t frame) {
 
 /* entry point */
 int main(int argc, char *argv[]) {
-  if (!load_scene_objects()) {
-    fprintf(stderr, "Failed to read map objects (limit: %d)\n", MAX_MAP_OBJECTS);
-    return 1;
-  }
-  /* Reserve sprite 0 for the player and one slot per map object. */
-  TLN_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 2, num_map_objects + 1, 0);
+  /* Reserve sprite 0 for the player and one slot per possible map object. */
+  TLN_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 2, MAX_MAP_OBJECTS + 1, 0);
   TLN_SetBGColor(32, 32, 128);
 
   /* Resolve TMX, TSX and bitmap resources from the same directory. */
   TLN_SetLoadPath("assets/my_jump_adventure");
-  TLN_Tilemap tilemap = TLN_LoadTilemap("my_jump_adventure.tmx", NULL);
+  if (!load_scene_objects()) {
+    TLN_Deinit();
+    return 1;
+  }
+  TLN_Tilemap tilemap = TLN_LoadTilemap("my_jump_adventure.tmx", "maps");
   if (tilemap == NULL) {
     fprintf(stderr, "Failed to load tilemap: %s\n",
             TLN_GetErrorString(TLN_GetLastError()));
@@ -261,10 +245,10 @@ int main(int argc, char *argv[]) {
 
   bool found_player = false;
   for (int i = 0; i < num_map_objects; ++i) {
-    if (object_asset(&map_objects[i]) == 0) {
-      player_x = (int)map_objects[i].x;
-      /* Tiled tile objects use a bottom-left anchor. */
-      player_y = (int)(map_objects[i].y - map_objects[i].height);
+    if (map_objects[i].asset == 0 && map_objects[i].info.visible) {
+      player_x = map_objects[i].info.x;
+      /* The native loader has already converted the bottom-left anchor. */
+      player_y = map_objects[i].info.y;
       found_player = true;
       break;
     }
@@ -276,22 +260,16 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  /* The first idle frame occupies the first 32x32 pixels of the sheet. */
-  TLN_Bitmap bitmap = TLN_LoadBitmap("player_Idle.png");
-  TLN_SpriteData sprite_data = {"player", 0, 0, PLAYER_SIZE, PLAYER_SIZE};
-  TLN_Spriteset player =
-      bitmap ? TLN_CreateSpriteset(bitmap, &sprite_data, 1) : NULL;
+  TLN_Spriteset player = sprites_from_tileset(object_assets[0].tileset);
   if (player == NULL) {
-    fprintf(stderr, "Failed to create player: %s\n",
-            TLN_GetErrorString(TLN_GetLastError()));
-    if (bitmap != NULL)
-      TLN_DeleteBitmap(bitmap);
+    fprintf(stderr, "Failed to create player spriteset\n");
     TLN_DeleteTilemap(tilemap);
     TLN_Deinit();
     return 1;
   }
   TLN_ConfigSprite(0, player, 0);
-  TLN_SetSpritePicture(0, 0);
+  TLN_SetSpritePicture(0, 1);
+  animate_object(0, 0, 0);
   /* Layer 1 is behind terrain layer 0. Bitmap layers repeat on both axes,
      matching the current TMX image layer's repeatx/repeaty settings. */
   TLN_Bitmap background = TLN_LoadBitmap("Background/Purple.png");

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.12.2-2-geb83ddb9" name="Apple" tilewidth="32" tileheight="32" tilecount="68" columns="17">
+<tileset version="1.10" tiledversion="1.12.2-2-geb83ddb9" name="Apple" tilewidth="32" tileheight="32" tilecount="17" columns="17">
  <grid orientation="orthogonal" width="16" height="16"/>
  <image source="Fruits/Apple.png" width="544" height="32"/>
  <tile id="0">
