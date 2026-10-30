@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="17" nextobjectid="72">
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="23" nextobjectid="92">
  <tileset firstgid="1" source="Terrain.tsx"/>
- <tileset firstgid="243" source="player_Idle.tsx"/>
- <tileset firstgid="254" source="Apple.tsx"/>
- <tileset firstgid="271" source="Pineapple.tsx"/>
- <tileset firstgid="288" source="Orange.tsx"/>
- <tileset firstgid="305" source="Strawberry.tsx"/>
+ <tileset firstgid="243" source="player.tsx"/>
+ <tileset firstgid="244" source="fruits.tsx"/>
  <imagelayer id="5" name="background" repeatx="1" repeaty="1">
   <image source="Background/Purple.png" width="64" height="64"/>
  </imagelayer>
@@ -28,34 +25,28 @@
 114,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,111
 </data>
  </layer>
- <group id="9" name="fruits">
-  <objectgroup id="15" name="pineapples">
-   <object id="59" gid="271" x="491.333" y="69.3333" width="32" height="32"/>
-   <object id="60" gid="271" x="491.333" y="98" width="32" height="32"/>
-   <object id="61" gid="271" x="491.333" y="126" width="32" height="32"/>
-  </objectgroup>
-  <objectgroup id="14" name="oranges">
-   <object id="62" gid="288" x="370.667" y="58" width="32" height="32"/>
-   <object id="63" gid="288" x="350.667" y="83.3333" width="32" height="32"/>
-   <object id="64" gid="288" x="388.667" y="82.6667" width="32" height="32"/>
-  </objectgroup>
-  <objectgroup id="13" name="strawberrys">
-   <object id="65" gid="305" x="49.3333" y="220" width="32" height="32"/>
-   <object id="68" gid="305" x="73.3333" y="220" width="32" height="32"/>
-   <object id="69" gid="305" x="100" y="220" width="32" height="32"/>
-  </objectgroup>
-  <objectgroup id="2" name="apples">
-   <object id="53" gid="254" x="115.333" y="57.3334" width="32" height="32"/>
-   <object id="54" gid="254" x="101.333" y="79.3333" width="32" height="32"/>
-   <object id="55" gid="254" x="129.333" y="80" width="32" height="32"/>
-   <object id="56" gid="254" x="86.6667" y="102" width="32" height="32"/>
-   <object id="57" gid="254" x="114.667" y="102" width="32" height="32"/>
-   <object id="58" gid="254" x="142" y="101.333" width="32" height="32"/>
+ <group id="17" name="player">
+  <objectgroup id="18" name="player">
+   <object id="72" name="virtual_guy" gid="243" x="257.435" y="160" width="32" height="32"/>
   </objectgroup>
  </group>
- <group id="10" name="player">
-  <objectgroup id="11" name="player">
-   <object id="71" gid="243" x="268.667" y="161.333" width="32" height="32"/>
+ <group id="19" name="fruits">
+  <objectgroup id="20" name="fruits">
+   <object id="73" gid="244" x="113.359" y="53.9556" width="32" height="32"/>
+   <object id="74" gid="244" x="95.543" y="74.8699" width="32" height="32"/>
+   <object id="75" gid="244" x="128.851" y="74.0953" width="32" height="32"/>
+   <object id="76" gid="244" x="81.6001" y="98.108" width="32" height="32"/>
+   <object id="77" gid="244" x="114.908" y="96.5588" width="32" height="32"/>
+   <object id="78" gid="244" x="145.892" y="96.5588" width="32" height="32"/>
+   <object id="79" gid="249" x="367.429" y="55.5048" width="32" height="32"/>
+   <object id="80" gid="249" x="347.289" y="82" width="32" height="32"/>
+   <object id="81" gid="249" x="386.02" y="82" width="32" height="32"/>
+   <object id="85" gid="250" x="488" y="71.7715" width="32" height="32"/>
+   <object id="86" gid="250" x="488" y="101.206" width="32" height="32"/>
+   <object id="88" gid="250" x="488" y="129.867" width="32" height="32"/>
+   <object id="89" gid="247" x="32.0255" y="215" width="32" height="32"/>
+   <object id="90" gid="247" x="65.3334" y="215" width="32" height="32"/>
+   <object id="91" gid="247" x="99.416" y="215" width="32" height="32"/>
   </objectgroup>
  </group>
 </map>
