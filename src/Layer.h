@@ -59,8 +59,8 @@ typedef struct Layer
 	bool dirty;					/* requires update before draw */
 	
 	/* */
-	int				hstart;		/* horizontal start offset */
-	int				vstart;		/* vertical start offset*/
+	int				hstart;		/* horizontal start offset (水平滚动偏移)*/
+	int				vstart;		/* vertical start offset  (垂直滚动偏移)*/
 
 	/* clip */
 	LayerWindow window;

@@ -20,6 +20,9 @@
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
+        "fruits.tsx": {
+            "dynamicWrapping": true
+        },
         "player.tsx": {
             "dynamicWrapping": true
         },

@@ -42,8 +42,8 @@ typedef struct Sprite
 	int				xworld, yworld;	/* world space location (TLN_SetSpriteWorldPosition) */
 	float			sx,sy;
 	float			ptx, pty;		/* normalized pivot position inside sprite (default = 0,0) */
-	rect_t			srcrect;
-	rect_t			dstrect;
+	rect_t			srcrect; /*源图片的读取矩形,坐标空间: 当前精灵帧内部*/
+	rect_t			dstrect; /* 目标绘制矩形,屏幕坐标 */
 	draw_t			mode;
 	uint8_t*		blend;
 	uint32_t		flags;

@@ -740,6 +740,7 @@ static void DrawSpriteCollisionScaling(int nsprite, uint8_t *srcpixel, uint16_t 
 }
 
 /* draws regular bitmap scanline for bitmap-based layer */
+/*　实现背景图片平铺效果　*/
 static bool DrawBitmapScanline(int nlayer, uint32_t* dstpixel, int nscan, int tx1, int tx2)
 {
 	const Layer *layer = (const Layer*)&engine->layers[nlayer];
