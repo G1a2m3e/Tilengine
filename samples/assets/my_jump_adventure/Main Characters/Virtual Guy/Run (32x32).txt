@@ -1,0 +1,12 @@
+running1,0,0,32,32
+running2,32,0,32,32
+running3,64,0,32,32
+running4,96,0,32,32
+running5,128,0,32,32
+running6,160,0,32,32
+running7,192,0,32,32
+running8,224,0,32,32
+running9,256,0,32,32
+running10,288,0,32,32
+running11,320,0,32,32
+running12,352,0,32,32

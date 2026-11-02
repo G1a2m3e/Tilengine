@@ -2,6 +2,7 @@ add_executable(my_jump_adventure
     MyJumpAdventure.c
     player.c
     utils.c
+    game.c
     )
 
 target_include_directories(my_jump_adventure PRIVATE

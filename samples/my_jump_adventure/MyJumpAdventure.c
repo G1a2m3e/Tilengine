@@ -1,6 +1,6 @@
 #include "../../src/LoadTMX.h"
 #include "Tilengine.h"
-#include "player.h"
+#include "game.h"
 #include <stdio.h>
 
 #define SCREEN_WIDTH (35 * 16)
@@ -9,7 +9,6 @@
 /* LoadWorld reverses TMX order: fruits=0, player=1, maps=2, background=3. */
 #define PLAYER_LAYER 0
 
-static Player player;
 static void main_loop(uint32_t frame);
 
 int main(void) {
@@ -31,8 +30,7 @@ int main(void) {
     return 1;
   }
   TLN_LoadWorld(TMX_FILE_NAME, 0);
-  init_player(&player, "virtual_guy",
-              "Main Characters/Virtual Guy/Idle (32x32).png");
+  init_game();
 
   TLN_CreateWindow(NULL, 0);
   TLN_SetMainTask(main_loop);
@@ -40,8 +38,6 @@ int main(void) {
 }
 
 static void main_loop(uint32_t frame) {
-  if (TLN_GetInput(INPUT_LEFT))
-    player_move_to_left(&player);
-  if (TLN_GetInput(INPUT_RIGHT))
-    player_move_to_right(&player);
+  update(frame);
+  render(frame);
 }

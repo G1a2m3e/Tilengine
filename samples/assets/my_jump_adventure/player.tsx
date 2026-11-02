@@ -3,5 +3,8 @@
  <grid orientation="orthogonal" width="32" height="1"/>
  <tile id="0">
   <image source="Main Characters/Virtual Guy/player.png" width="32" height="32"/>
+  <objectgroup draworder="index" id="2">
+   <object id="1" x="5" y="8" width="22" height="24"/>
+  </objectgroup>
  </tile>
 </tileset>
