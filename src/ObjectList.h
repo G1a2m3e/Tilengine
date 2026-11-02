@@ -28,6 +28,7 @@ typedef struct _Object
 	int width;
 	int height;
 	TLN_Bitmap bitmap;	/* computed after calling TLN_SetLayerObjects() */
+	int bitmap_tile;	/* currently copied animation frame, zero-based */
 	bool owns_bitmap;	/* false for shared image-collection bitmaps */
 	bool has_gid;
 	bool visible;

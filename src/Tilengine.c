@@ -24,6 +24,7 @@
 #include "Sprite.h"
 #include "Tables.h"
 #include "LoadTMX.h"
+#include "ObjectList.h"
 
 /* magic number to recognize context object */
 #define ID_CONTEXT	0x7E5D0AB1
@@ -320,6 +321,19 @@ bool ref_add(RefList* refs, void* item)
 	return false;
 }
 
+/* Shared by tilemap and object layers; update each tileset only once per frame. */
+static void UpdateTilesetAnimations(TLN_Tileset tileset, RefList* refs, int frame)
+{
+	if (tileset == NULL || tileset->sp == NULL || !ref_add(refs, tileset))
+		return;
+	for (int c = 0; c < tileset->sp->num_sequences; ++c)
+	{
+		Animation* animation = &tileset->animations[c];
+		if (animation->enabled && !animation->paused)
+			UpdateAnimation(animation, frame);
+	}
+}
+
 /* Starts active rendering of the current frame */
 static void BeginFrame (int frame)
 {
@@ -374,15 +388,22 @@ static void BeginFrame (int frame)
 				if (tileset == NULL)
 					break;
 
-				if (tileset->sp != NULL && ref_add(&tilesets, tileset))
+				UpdateTilesetAnimations(tileset, &tilesets, frame);
+			}
+		}
+		if (layer->objects != NULL)
+		{
+			for (TLN_Object* object = layer->objects->list; object; object = object->next)
+			{
+				TLN_Tileset source = object->tileset;
+				UpdateTilesetAnimations(source, &tilesets, frame);
+				if (!object->owns_bitmap || source->sp == NULL)
+					continue;
+				int tile = source->tiles[object->gid + 1] - 1;
+				if (tile != object->bitmap_tile)
 				{
-					int c;
-					for (c = 0; c < tileset->sp->num_sequences; c += 1)
-					{
-						Animation* animation = &tileset->animations[c];
-						if (animation->enabled && !animation->paused)
-							UpdateAnimation(animation, frame);
-					}
+					CopyTilesetTile(source, tile, object->bitmap);
+					object->bitmap_tile = tile;
 				}
 			}
 		}

@@ -184,7 +184,17 @@ bool TLN_SetLayerObjects(int nlayer, TLN_ObjectList objects, TLN_Tileset tileset
 	{
 		if (item->visible && item->has_gid)
 		{
-			TLN_Tileset source = tileset != NULL ? tileset : item->tileset;
+			if (tileset != NULL)
+				item->tileset = tileset;
+			TLN_Tileset source = item->tileset;
+			item->bitmap_tile = item->gid;
+			if (source != NULL && source->sp != NULL)
+			{
+				int c = 0;
+				for (TLN_Sequence seq = source->sp->sequences; seq; seq = seq->next, ++c)
+					if (!source->animations[c].enabled)
+						SetTilesetAnimation(source, c, seq);
+			}
 			if (item->owns_bitmap)
 				TLN_DeleteBitmap(item->bitmap);
 			item->bitmap = GetTilesetBitmap(source, item->gid);

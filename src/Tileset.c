@@ -69,8 +69,8 @@ TLN_Tileset TLN_CreateTileset (int numtiles, int width, int height, TLN_Palette 
 	tileset->attributes = (TLN_TileAttributes*)calloc(numtiles, sizeof(TLN_TileAttributes));
 	if (attributes != NULL)
 		memcpy (tileset->attributes, attributes, numtiles * sizeof(TLN_TileAttributes));
-	tileset->tiles = (uint16_t*)calloc(numtiles, sizeof(uint16_t));
-	for (c = 0; c < numtiles; c += 1)
+	tileset->tiles = (uint16_t*)calloc(numtiles + 1, sizeof(uint16_t));
+	for (c = 0; c <= numtiles; c += 1)
 		tileset->tiles[c] = c;
 
 	/* create animations */
@@ -140,7 +140,7 @@ TLN_Tileset TLN_CloneTileset (TLN_Tileset src)
 	if (tileset == NULL)
 		return NULL;
 
-	const int size_tiles = src->numtiles * sizeof(uint16_t);
+	const int size_tiles = (src->numtiles + 1) * sizeof(uint16_t);
 	const int size_color = src->numtiles * src->height;
 	const int size_attributes = src->numtiles * sizeof(TLN_TileAttributes);
 		
@@ -248,6 +248,14 @@ TLNAPI int TLN_GetTilesetNumAnimations(TLN_Tileset tileset)
 	return CheckBaseObject(tileset, OT_TILESET) && tileset->sp != NULL ? tileset->sp->num_sequences : 0;
 }
 
+/* Copy a zero-based tile into an existing bitmap. */
+void CopyTilesetTile(TLN_Tileset tileset, int tileid, TLN_Bitmap bitmap)
+{
+	for (int y = 0; y < tileset->height; ++y)
+		memcpy(bitmap->data + y * bitmap->pitch,
+			&GetTilesetPixel(tileset, tileid, 0, y), tileset->width);
+}
+
 /* for image-based tilesets: returns bitmap with matching tileid */
 TLN_Bitmap GetTilesetBitmap(TLN_Tileset tileset, int tileid) {
   int c;
@@ -263,9 +271,7 @@ TLN_Bitmap GetTilesetBitmap(TLN_Tileset tileset, int tileid) {
     TLN_Bitmap bitmap = TLN_CreateBitmap(tileset->width, tileset->height, 8);
     bitmap->palette = tileset->palette;
     ObjectOwner(bitmap) = false; /* Borrow the tileset palette. */
-    for (int y = 0; y < tileset->height; ++y)
-      memcpy(bitmap->data + y * bitmap->pitch,
-             &GetTilesetPixel(tileset, tileid, 0, y), tileset->width);
+    CopyTilesetTile(tileset, tileid, bitmap);
     return bitmap;
   }
 
