@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="23" nextobjectid="98">
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="23" nextobjectid="108">
  <tileset firstgid="1" source="Terrain.tsx"/>
  <tileset firstgid="243" source="player.tsx"/>
  <tileset firstgid="244" source="fruits.tsx"/>
+ <tileset firstgid="252" source="orange.tsx"/>
+ <tileset firstgid="269" source="apple.tsx"/>
+ <tileset firstgid="286" source="orange.tsx"/>
  <imagelayer id="5" name="background" repeatx="1" repeaty="1">
   <image source="Background/Purple.png" width="64" height="64"/>
  </imagelayer>
@@ -33,20 +36,22 @@
    <object id="76" gid="244" x="81.6001" y="98" width="32" height="32"/>
    <object id="77" gid="244" x="114.908" y="98" width="32" height="32"/>
    <object id="78" gid="244" x="145.892" y="98" width="32" height="32"/>
-   <object id="79" gid="249" x="367.429" y="55.5048" width="32" height="32"/>
-   <object id="80" gid="249" x="347.289" y="82" width="32" height="32"/>
-   <object id="81" gid="249" x="386.02" y="82" width="32" height="32"/>
    <object id="85" gid="250" x="488" y="71.7715" width="32" height="32"/>
    <object id="86" gid="250" x="488" y="101.206" width="32" height="32"/>
    <object id="88" gid="250" x="488" y="129.867" width="32" height="32"/>
    <object id="89" gid="247" x="32.0255" y="215" width="32" height="32"/>
    <object id="90" gid="247" x="65.3334" y="215" width="32" height="32"/>
    <object id="91" gid="247" x="99.416" y="215" width="32" height="32"/>
+   <object id="98" gid="252" x="363.556" y="57.8286" width="32" height="32"/>
+   <object id="99" gid="252" x="341.867" y="81.0667" width="32" height="32"/>
   </objectgroup>
  </group>
  <group id="17" name="player">
   <objectgroup id="18" name="player">
    <object id="72" name="virtual_guy" gid="243" x="257.435" y="160" width="32" height="32"/>
+   <object id="104" name="test_orange" gid="253" x="386.02" y="81.0667" width="32" height="32"/>
+   <object id="106" gid="290" x="609.359" y="-88.0509" width="16" height="16"/>
+   <object id="107" gid="290" x="451.34" y="-46.2223" width="16" height="16"/>
   </objectgroup>
  </group>
 </map>

@@ -165,9 +165,7 @@ bool TLN_SetLayerObjects(int nlayer, TLN_ObjectList objects, TLN_Tileset tileset
 		return false;
 	}
 
-	if (tileset == NULL)
-		tileset = objects->tileset;
-	if (!CheckBaseObject(tileset, OT_TILESET) || tileset->tstype != TILESET_IMAGES)
+	if (tileset != NULL && !CheckBaseObject(tileset, OT_TILESET))
 	{
 		TLN_SetLastError(TLN_ERR_REF_TILESET);
 		return false;
@@ -186,7 +184,11 @@ bool TLN_SetLayerObjects(int nlayer, TLN_ObjectList objects, TLN_Tileset tileset
 	{
 		if (item->visible && item->has_gid)
 		{
-			item->bitmap = GetTilesetBitmap(tileset, item->gid);
+			TLN_Tileset source = tileset != NULL ? tileset : item->tileset;
+			if (item->owns_bitmap)
+				TLN_DeleteBitmap(item->bitmap);
+			item->bitmap = GetTilesetBitmap(source, item->gid);
+			item->owns_bitmap = item->bitmap != NULL && source->tstype == TILESET_TILES;
 			if (item->bitmap)
 			{
 				item->width = item->bitmap->width;

@@ -249,21 +249,30 @@ TLNAPI int TLN_GetTilesetNumAnimations(TLN_Tileset tileset)
 }
 
 /* for image-based tilesets: returns bitmap with matching tileid */
-TLN_Bitmap GetTilesetBitmap(TLN_Tileset tileset, int tileid)
-{
-	int c;
-	if (!CheckBaseObject(tileset, OT_TILESET) || tileset->tstype != TILESET_IMAGES)
-		return NULL;
+TLN_Bitmap GetTilesetBitmap(TLN_Tileset tileset, int tileid) {
+  int c;
+  if (!CheckBaseObject(tileset, OT_TILESET))
+    return NULL;
 
-	for (c = 0; c < tileset->numtiles; c += 1)
-	{
-		if (tileset->images[c].id == tileid)
-			return tileset->images[c].bitmap;
-	}
-	return NULL;
+  if (tileset->tstype == TILESET_IMAGES) {
+    for (c = 0; c < tileset->numtiles; c += 1) {
+      if (tileset->images[c].id == tileid)
+        return tileset->images[c].bitmap;
+    }
+  }else if(tileset->tstype == TILESET_TILES){
+    TLN_Bitmap bitmap = TLN_CreateBitmap(tileset->width, tileset->height, 8);
+    bitmap->palette = tileset->palette;
+    ObjectOwner(bitmap) = false; /* Borrow the tileset palette. */
+    for (int y = 0; y < tileset->height; ++y)
+      memcpy(bitmap->data + y * bitmap->pitch,
+             &GetTilesetPixel(tileset, tileid, 0, y), tileset->width);
+    return bitmap;
+  }
+
+  return NULL;
 }
 
-/* devuelve si la línea usa color key */
+/* devuelve si la lï¿½nea usa color key */
 static bool HasTransparentPixels (uint8_t* src, int width)
 {
 	register uint8_t* end = src + width;

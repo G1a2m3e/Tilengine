@@ -28,9 +28,11 @@ typedef struct _Object
 	int width;
 	int height;
 	TLN_Bitmap bitmap;	/* computed after calling TLN_SetLayerObjects() */
+	bool owns_bitmap;	/* false for shared image-collection bitmaps */
 	bool has_gid;
 	bool visible;
 	struct _Object* next;
+	TLN_Tileset tileset; // 解决整个对象层只能用一个图集的问题
 }
 TLN_Object;
 
@@ -42,7 +44,6 @@ struct ObjectList
 	int height;		/* map height, pixels */
 	int id;			/* id property */
 	bool visible;	/* visible property */
-	TLN_Tileset tileset;	/* attached tileset, if any */
 	struct _Object* list;
 	struct _Object* last;
 	struct _Object* iterator;

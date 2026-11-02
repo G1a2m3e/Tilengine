@@ -21,8 +21,8 @@
 typedef enum
 {
 	TILESET_NONE,
-	TILESET_TILES,
-	TILESET_IMAGES,
+	TILESET_TILES, // tiled中: 基于整张图块集图片
+	TILESET_IMAGES, // tiled中: 多图片集合
 }
 TilesetType;
 

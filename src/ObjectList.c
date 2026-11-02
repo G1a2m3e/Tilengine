@@ -196,6 +196,8 @@ static bool CloneObjectToList(TLN_ObjectList list, TLN_Object* data)
 		return false;
 
 	memcpy(object, data, sizeof(struct _Object));
+	if (object->owns_bitmap)
+		object->bitmap = TLN_CloneBitmap(data->bitmap);
 	add_to_list(list, object);
 	return true;
 }
@@ -268,44 +270,31 @@ TLN_ObjectList TLN_LoadObjectList(const char* filename, const char* layername)
 	{
 		TMXTileset* tmxtileset;
 		struct _Object* item;
-		int gid = 0;
 		int c;
-
-		/* find suitable tileset */
-		item = loader.objects->list;
-		while (item != NULL && gid == 0)
-		{
-			if (item->gid > 0)
-				gid = item->gid;
-			item = item->next;
-		}
 
 		/* load referenced tilesets */
 		TLN_Tileset tilesets[TMX_MAX_TILESET] = { 0 };
 		for (c = 0; c < tmxinfo.num_tilesets; c += 1)
 			tilesets[c] = TLN_LoadTileset(tmxinfo.tilesets[c].source);
 
-		int suitable = TMXGetSuitableTileset(&tmxinfo, gid, tilesets);
-		tmxtileset = &tmxinfo.tilesets[suitable];
 
 		/* correct with firstgid */
 		item = loader.objects->list;
 		while (item != NULL)
 		{
-			if (item->gid > 0)
-				item->gid = item->gid - tmxtileset->firstgid;
+			if (item->has_gid && item->gid > 0)
+			{
+				int suitable = TMXGetSuitableTileset(&tmxinfo, item->gid, tilesets);
+				if (suitable >= 0)
+				{
+					tmxtileset = &tmxinfo.tilesets[suitable];
+					item->tileset = tilesets[suitable];
+					item->gid -= tmxtileset->firstgid;
+				}
+			}
 			item = item->next;
 		}
 
-		/* delete unused tilesets */
-		for (c = 0; c < tmxinfo.num_tilesets; c += 1)
-		{
-			if (c != suitable)
-				TLN_DeleteTileset(tilesets[c]);
-		}
-
-		TLN_Tileset tileset = tilesets[suitable];
-		loader.objects->tileset = tileset;
 		loader.objects->width = tmxinfo.width*tmxinfo.tilewidth;
 		loader.objects->height = tmxinfo.height*tmxinfo.tileheight;
 	}
@@ -322,6 +311,8 @@ TLN_ObjectList TLN_CloneObjectList(TLN_ObjectList src)
 		return NULL;
 
 	list = (TLN_ObjectList)CloneBaseObject(src);
+	list->list = list->last = NULL;
+	list->num_items = 0;
 	object = src->list;
 	while (object != NULL)
 	{
@@ -407,6 +398,8 @@ bool TLN_DeleteObjectList(TLN_ObjectList list)
 	{
 		struct _Object* next;
 		next = object->next;
+		if (object->owns_bitmap)
+			TLN_DeleteBitmap(object->bitmap);
 		free(object);
 		object = next;
 	}
