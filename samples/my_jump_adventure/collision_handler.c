@@ -212,7 +212,7 @@ static void parse_xml(const char *filename, SimpleXmlTagHandler handler) {
 }
 
 static struct {
-  HitBoxOffset box;
+  CollisionOffset box;
   int object_id, current_object;
   uint32_t gid, current_gid;
   int target_tile, current_tile;
@@ -274,7 +274,7 @@ static void *read_HitBox(SimpleXmlParser parser, SimpleXmlEvent event,
   return read_HitBox;
 }
 
-HitBoxOffset load_object_hitbox(const char *tmx_file, int object_id) {
+CollisionOffset load_object_hitbox(const char *tmx_file, int object_id) {
   memset(&HitBox_loader, 0, sizeof(HitBox_loader));
   HitBox_loader.object_id = object_id;
   HitBox_loader.current_tile = -1;

@@ -1,0 +1,6 @@
+double_jump1,0,0,32,32
+double_jump2,32,0,32,32
+double_jump3,64,0,32,32
+double_jump4,96,0,32,32
+double_jump5,128,0,32,32
+double_jump6,160,0,32,32

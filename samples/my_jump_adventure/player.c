@@ -7,12 +7,19 @@
 static TLN_Spriteset idle_set;
 static TLN_Spriteset running_set;
 static TLN_Spriteset jump_set;
+static TLN_Spriteset double_jump_set;
+
 static TLN_Sequence idle_seq;
 static TLN_Sequence running_seq;
-static PlayerState show_state;
+static TLN_Sequence double_jump_seq;
+
+static ShowState show_state;
+static bool showing_double_jump = false;
 #define MOVE_SPEED 120.0f
-#define JUMP_SPEED 160.0f
-#define GRAVITY 300.0f
+// 数值越大，起跳和下落越快，高度保持不变。
+#define JUMP_PACE 1.9f
+#define JUMP_SPEED (160.0f * JUMP_PACE)
+#define GRAVITY (300.0f * JUMP_PACE * JUMP_PACE)
 
 void init_player(Player *player, const char *tmx_object_name,
                  const char *spriteset_name) {
@@ -21,8 +28,13 @@ void init_player(Player *player, const char *tmx_object_name,
   running_set =
       TLN_LoadSpriteset("Main Characters/Virtual Guy/Run (32x32).png");
   jump_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Jump (32x32).png");
+  double_jump_set =
+      TLN_LoadSpriteset("Main Characters/Virtual Guy/Double Jump (32x32).png");
+
   idle_seq = TLN_CreateSpriteSequence("idle", idle_set, "idle", 3);
   running_seq = TLN_CreateSpriteSequence("running", running_set, "running", 3);
+  double_jump_seq = TLN_CreateSpriteSequence("double_jump", double_jump_set,
+                                             "double_jump", 3);
   TLN_SetSpriteSet(PLAYER_SPRITES, idle_set);
   player->x = obj.x;
   player->y = obj.y;
@@ -33,6 +45,8 @@ void init_player(Player *player, const char *tmx_object_name,
   player->state = IDLE;
   player->velocity_y = 0.0f;
   player->grounded = true;
+  player->double_jumping = false;
+  player->jump_was_down = false;
   player->hitbox_offset = load_object_hitbox("my_jump_adventure.tmx", 72);
 }
 
@@ -55,30 +69,38 @@ static float jump_or_falling(Player *player, uint32_t elapsed) {
 }
 
 static void show_idle(Player *player) {
-  if (show_state == IDLE) {
+  if (show_state == SHOW_IDLE) {
     return;
   }
   TLN_SetSpriteSet(PLAYER_SPRITES, idle_set);
   TLN_SetSpriteAnimation(PLAYER_SPRITES, idle_seq, 0);
-  show_state = IDLE;
+  show_state = SHOW_IDLE;
 }
 
 static void show_running(Player *player) {
-  if (show_state == RUNNING) {
+  if (show_state == SHOW_RUNNING) {
     return;
   }
   TLN_SetSpriteSet(PLAYER_SPRITES, running_set);
   TLN_SetSpriteAnimation(PLAYER_SPRITES, running_seq, 0);
-  show_state = RUNNING;
+  show_state = SHOW_RUNNING;
 }
 
+static void show_double_jumping(Player *player) {
+  if (show_state == SHOW_DOUBLE_JUMPING) {
+    return;
+  }
+  TLN_SetSpriteSet(PLAYER_SPRITES, double_jump_set);
+  TLN_SetSpriteAnimation(PLAYER_SPRITES, double_jump_seq, 0);
+  show_state = SHOW_DOUBLE_JUMPING;
+}
 static void show_jumping(Player *player) {
-  if (show_state == JUMPING_OR_FALLING) {
+  if (show_state == SHOW_JUMPING_OR_FALLING) {
     return;
   }
   TLN_DisableSpriteAnimation(PLAYER_SPRITES);
   TLN_SetSpriteSet(PLAYER_SPRITES, jump_set);
-  show_state = JUMPING_OR_FALLING;
+  show_state = SHOW_JUMPING_OR_FALLING;
 }
 
 static HitBox get_player_hitbox(Player *player) {
@@ -103,7 +125,9 @@ void update_player(Player *player, uint32_t elapsed) {
 
   bool right = TLN_GetInput(INPUT_RIGHT);
   bool left = TLN_GetInput(INPUT_LEFT);
-  bool up = TLN_GetInput(INPUT_UP);
+  bool up = TLN_GetInput(INPUT_B) || TLN_GetInput(INPUT_UP);
+  bool jump_pressed = up && !player->jump_was_down;
+  player->jump_was_down = up;
   float dx = 0;
   float dy = 0;
 
@@ -126,10 +150,16 @@ void update_player(Player *player, uint32_t elapsed) {
     dx = move_to_left(player, elapsed);
   }
 
-  if (up && player->grounded) {
-    player->state = JUMPING_OR_FALLING;
-    player->velocity_y = -JUMP_SPEED;
-    player->grounded = false;
+  if (jump_pressed) {
+    if (player->grounded) {
+      player->state = JUMPING_OR_FALLING;
+      player->velocity_y = -JUMP_SPEED;
+      player->grounded = false;
+      player->double_jumping = false;
+    } else if (player->state == JUMPING_OR_FALLING && !player->double_jumping) {
+      player->velocity_y = -JUMP_SPEED;
+      player->double_jumping = true;
+    }
   }
   if (player->state == JUMPING_OR_FALLING) {
     dy = jump_or_falling(player, elapsed);
@@ -158,6 +188,10 @@ void render_player(Player *player, uint32_t frame) {
   else if (player->state == IDLE)
     show_idle(player);
   else if (player->state == JUMPING_OR_FALLING) {
-    show_jumping(player);
+    if (player->double_jumping && player->velocity_y < 0)
+      show_double_jumping(player);
+    else {
+      show_jumping(player);
+    }
   }
 }

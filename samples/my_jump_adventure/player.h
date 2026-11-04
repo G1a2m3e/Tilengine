@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 typedef enum { IDLE, RUNNING, JUMPING_OR_FALLING } PlayerState;
+typedef enum { SHOW_IDLE, SHOW_RUNNING, SHOW_JUMPING_OR_FALLING, SHOW_DOUBLE_JUMPING } ShowState;
 #define PLAYER_SPRITES 0
 
 typedef struct {
@@ -13,9 +14,11 @@ typedef struct {
   float y;
   bool facing_right;
   PlayerState state;
-  HitBoxOffset hitbox_offset;
+  CollisionOffset hitbox_offset;
   float velocity_y;
   bool grounded;
+  bool double_jumping;
+  bool jump_was_down;
 } Player;
 
 extern void init_player(Player *player, const char *tmx_object_name,

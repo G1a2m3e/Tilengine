@@ -9,10 +9,11 @@ typedef struct {
   float push_weight;
 } HitBox;
 
+// 保存从文件加载的精灵碰撞矩形: x_offset, y_offset为偏移量
 typedef struct {
   float x_offset, y_offset;
   float w, h;
-} HitBoxOffset;
+} CollisionOffset;
 
 /*
   relative_dx:
@@ -35,6 +36,6 @@ extern bool resolve_displacement(HitBox src, HitBox obs, float *src_dx,
 extern HitBox handle_maps_collision(HitBox src, float dx, float dy);
 
  /* First collision object on the tile referenced by the TMX object ID. */
-extern HitBoxOffset load_object_hitbox(const char *tmx_file, int object_id);
+extern CollisionOffset load_object_hitbox(const char *tmx_file, int object_id);
 
 #endif

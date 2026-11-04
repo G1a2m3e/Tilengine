@@ -54,11 +54,15 @@ static TLN_TaskCallback frametask = NULL;
 typedef struct
 {
 	bool enabled;
-	uint8_t joystick_id;
+	SDL_JoystickID joystick_id;
 	SDL_Joystick* joy;
 	SDL_Keycode keycodes[MAX_INPUTS];
 	uint8_t joybuttons[MAX_INPUTS];
 	uint32_t inputs;
+	uint32_t keyboard_inputs;
+	uint32_t joybutton_inputs;
+	uint32_t joyaxis_inputs;
+	uint32_t joyhat_inputs;
 }
 PlayerInput;
 
@@ -438,16 +442,22 @@ void TLN_DeleteWindow (void)
 }
 
 /* marks input as pressed */
-static void SetInput (TLN_Player player, TLN_Input input)
+static void SetInput (TLN_Player player, TLN_Input input, uint32_t* source)
 {
-	player_inputs[player].inputs |= (1 << input);
+	PlayerInput* player_input = &player_inputs[player];
+	*source |= (1u << input);
+	player_input->inputs = player_input->keyboard_inputs | player_input->joybutton_inputs |
+		player_input->joyaxis_inputs | player_input->joyhat_inputs;
 	last_key = input;
 }
 
 /* marks input as unpressed */
-static void ClrInput (TLN_Player player, TLN_Input input)
+static void ClrInput (TLN_Player player, TLN_Input input, uint32_t* source)
 {
-	player_inputs[player].inputs &= ~(1 << input);
+	PlayerInput* player_input = &player_inputs[player];
+	*source &= ~(1u << input);
+	player_input->inputs = player_input->keyboard_inputs | player_input->joybutton_inputs |
+		player_input->joyaxis_inputs | player_input->joyhat_inputs;
 }
 
 /* process keyboard input */
@@ -468,9 +478,9 @@ static void ProcessKeycodeInput (TLN_Player player, SDL_Keycode keycode, uint8_t
 	if (input != INPUT_NONE)
 	{
 		if (state == SDL_PRESSED)
-			SetInput (player, input);
+			SetInput (player, input, &player_input->keyboard_inputs);
 		else
-			ClrInput (player, input);
+			ClrInput (player, input, &player_input->keyboard_inputs);
 	}
 }
 
@@ -492,32 +502,51 @@ static void ProcessJoybuttonInput (TLN_Player player, uint8_t button, uint8_t st
 	if (input != INPUT_NONE)
 	{
 		if (state == SDL_PRESSED)
-			SetInput (player, input);
+			SetInput (player, input, &player_input->joybutton_inputs);
 		else
-			ClrInput (player, input);
+			ClrInput (player, input, &player_input->joybutton_inputs);
 	}
 }
 
 /* process joystic axis input */
 static void ProcessJoyaxisInput (TLN_Player player, uint8_t axis, int value)
 {
+	uint32_t* source = &player_inputs[player].joyaxis_inputs;
 	if (axis == 0)
 	{
-		ClrInput (player, INPUT_LEFT);
-		ClrInput (player, INPUT_RIGHT);
+		ClrInput (player, INPUT_LEFT, source);
+		ClrInput (player, INPUT_RIGHT, source);
 		if (value > 1000)
-			SetInput (player, INPUT_RIGHT);
+			SetInput (player, INPUT_RIGHT, source);
 		else if (value < -1000)
-			SetInput (player, INPUT_LEFT);
+			SetInput (player, INPUT_LEFT, source);
 	}
 	else if (axis == 1)
 	{
-		ClrInput (player, INPUT_UP);
-		ClrInput (player, INPUT_DOWN);
+		ClrInput (player, INPUT_UP, source);
+		ClrInput (player, INPUT_DOWN, source);
 		if (value > 1000)
-			SetInput (player, INPUT_DOWN);
+			SetInput (player, INPUT_DOWN, source);
 		else if (value < -1000)
-			SetInput (player, INPUT_UP);
+			SetInput (player, INPUT_UP, source);
+	}
+}
+
+/* Hat values are bit masks, including diagonal directions. */
+static void ProcessJoyhatInput (TLN_Player player, uint8_t hat, uint8_t value)
+{
+	uint32_t* source = &player_inputs[player].joyhat_inputs;
+	const TLN_Input inputs[] = { INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT };
+	const uint8_t directions[] = { SDL_HAT_UP, SDL_HAT_DOWN, SDL_HAT_LEFT, SDL_HAT_RIGHT };
+	int c;
+	if (hat != 0)
+		return;
+	for (c = 0; c < 4; c++)
+	{
+		if (value & directions[c])
+			SetInput (player, inputs[c], source);
+		else
+			ClrInput (player, inputs[c], source);
 	}
 }
 
@@ -618,6 +647,15 @@ bool TLN_ProcessWindow (void)
 					ProcessJoyaxisInput ((TLN_Player)c, joyaxisevt->axis, joyaxisevt->value);
 			}
 			break;
+
+		case SDL_JOYHATMOTION:
+			for (c=PLAYER1; c<MAX_PLAYERS; c++)
+			{
+				if (player_inputs[c].enabled == true && player_inputs[c].joy != NULL &&
+					player_inputs[c].joystick_id == evt.jhat.which)
+					ProcessJoyhatInput ((TLN_Player)c, evt.jhat.hat, evt.jhat.value);
+			}
+			break;
     	}
 
 		/* procesa eventos de usuario */
@@ -701,10 +739,16 @@ void TLN_AssignInputJoystick (TLN_Player player, int index)
 		SDL_JoystickClose (player_input->joy);
 		player_input->joy = NULL;
 	}
+	player_input->joystick_id = -1;
+	player_input->joybutton_inputs = 0;
+	player_input->joyaxis_inputs = 0;
+	player_input->joyhat_inputs = 0;
+	player_input->inputs = player_input->keyboard_inputs;
 	if (index >= 0)
 	{
 		player_input->joy = SDL_JoystickOpen (index);
-		player_input->joystick_id = SDL_JoystickInstanceID (player_input->joy);
+		if (player_input->joy != NULL)
+			player_input->joystick_id = SDL_JoystickInstanceID (player_input->joy);
 	}
 }
 
