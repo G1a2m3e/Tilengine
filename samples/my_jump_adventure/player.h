@@ -2,11 +2,10 @@
 #define PLAY_H
 
 #include "collision_handler.h"
-#include "utils.h"
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef enum { IDLE, RUNNING, JUMPING } PlayerState;
+typedef enum { IDLE, RUNNING, JUMPING_OR_FALLING } PlayerState;
 #define PLAYER_SPRITES 0
 
 typedef struct {
@@ -15,6 +14,8 @@ typedef struct {
   bool facing_right;
   PlayerState state;
   HitBox hitbox;
+  float velocity_y;
+  bool grounded;
 } Player;
 
 extern void init_player(Player *player, const char *tmx_object_name,

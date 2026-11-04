@@ -1,16 +1,16 @@
 #include "collision_handler.h"
-#include "Tilengine.h"
 #include "../../src/LoadFile.h"
-#include "../src/Tilemap.h"
 #include "../../src/LoadTMX.h"
 #include "../../src/simplexml.h"
-#include <stdlib.h>
-#include <string.h>
+#include "../src/Tilemap.h"
+#include "Tilengine.h"
 #include <math.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
-bool swept_aabb(HitBox src, HitBox obstacle, float relative_dx, float relative_dy,
-               float *hit_t) {
+bool swept_aabb(HitBox src, HitBox obstacle, float relative_dx,
+                float relative_dy, float *hit_t) {
   // 初始已经重叠
   if (src.x < obstacle.x + obstacle.w && src.x + src.w > obstacle.x &&
       src.y < obstacle.y + obstacle.h && src.y + src.h > obstacle.y) {
@@ -70,7 +70,7 @@ bool swept_aabb(HitBox src, HitBox obstacle, float relative_dx, float relative_d
 }
 
 bool resolve_displacement(HitBox src, HitBox obs, float *src_dx, float *src_dy,
-                         float *obs_dx, float *obs_dy, float hit_t) {
+                          float *obs_dx, float *obs_dy, float hit_t) {
   // 1. 相对位移
   float rdx = *src_dx - *obs_dx;
   float rdy = *src_dy - *obs_dy;
@@ -134,9 +134,10 @@ bool resolve_displacement(HitBox src, HitBox obs, float *src_dx, float *src_dy,
     2. obs从后面追上src
       a. src和obs都向右 src_dx > 0, obs_dx > 0, rdx < 0 ----> va < 0, vb < 0
       b. src和obs都向左 src_dx < 0, obs_dx < 0, rdx > 0 ----> va < 0, vb < 0
-    3. src在左往右,obs在右往左: src_dx > 0, obs_dx < 0, rdx > 0 ----> va > 0, vb < 0
-    4. src在右往左,obs在左往右: src_dx < 0, obs_dx > 0, rdx < 0 ----> va > 0, vb < 0
-    下面va,vb的判断就是根据上面的规律得到,而始终va > vb
+    3. src在左往右,obs在右往左: src_dx > 0, obs_dx < 0, rdx > 0 ----> va > 0, vb
+    < 0
+    4. src在右往左,obs在左往右: src_dx < 0, obs_dx > 0, rdx < 0 ----> va > 0, vb
+    < 0 下面va,vb的判断就是根据上面的规律得到,而始终va > vb
   */
 
   /**　
@@ -199,7 +200,8 @@ bool resolve_displacement(HitBox src, HitBox obs, float *src_dx, float *src_dy,
 static void parse_xml(const char *filename, SimpleXmlTagHandler handler) {
   ssize_t size;
   char *xml = LoadFile(filename, &size);
-  if (!xml) return;
+  if (!xml)
+    return;
   SimpleXmlParser parser = simpleXmlCreateParser(xml, size);
   if (parser) {
     simpleXmlParse(parser, handler);
@@ -220,7 +222,8 @@ static void *read_object_gid(SimpleXmlParser parser, SimpleXmlEvent event,
                              const char *tag, const char *attribute,
                              const char *value) {
   (void)parser;
-  if (strcmp(tag, "object") != 0) return read_object_gid;
+  if (strcmp(tag, "object") != 0)
+    return read_object_gid;
   if (event == ADD_SUBTAG) {
     HitBox_loader.current_object = 0;
     HitBox_loader.current_gid = 0;
@@ -241,7 +244,8 @@ static void *read_HitBox(SimpleXmlParser parser, SimpleXmlEvent event,
                          const char *value) {
   (void)parser;
   if (event == ADD_SUBTAG && strcmp(tag, "objectgroup") == 0)
-    HitBox_loader.in_group = HitBox_loader.current_tile == HitBox_loader.target_tile;
+    HitBox_loader.in_group =
+        HitBox_loader.current_tile == HitBox_loader.target_tile;
   else if (event == ADD_ATTRIBUTE) {
     if (strcmp(tag, "tile") == 0 && strcmp(attribute, "id") == 0)
       HitBox_loader.current_tile = atoi(value);
@@ -277,7 +281,8 @@ HitBox load_object_hitbox(const char *tmx_file, int object_id) {
   TMXInfo map = {0};
   TMXLoad(tmx_file, &map);
   parse_xml(tmx_file, read_object_gid);
-  if (!HitBox_loader.gid) return HitBox_loader.box;
+  if (!HitBox_loader.gid)
+    return HitBox_loader.box;
 
   /* The largest firstgid <= GID identifies its tileset. */
   TMXTileset *tileset = NULL;
@@ -285,7 +290,8 @@ HitBox load_object_hitbox(const char *tmx_file, int object_id) {
     if (HitBox_loader.gid >= (uint32_t)map.tilesets[i].firstgid &&
         (!tileset || map.tilesets[i].firstgid > tileset->firstgid))
       tileset = &map.tilesets[i];
-  if (!tileset) return HitBox_loader.box;
+  if (!tileset)
+    return HitBox_loader.box;
 
   HitBox_loader.target_tile = HitBox_loader.gid - tileset->firstgid;
   FileInfo path;
@@ -296,56 +302,58 @@ HitBox load_object_hitbox(const char *tmx_file, int object_id) {
   return HitBox_loader.box;
 }
 
-
-static bool HitBox_collided(HitBox src, HitBox dest) {
-  return src.x < dest.x + dest.w &&
-         src.x + src.w > dest.x &&
-         src.y < dest.y + dest.h &&
-         src.y + src.h > dest.y;
-}
-
-static HitBox GetSweptBounds(HitBox src, float *src_dx, float *src_dy)
-{
-    float dx = *src_dx;
-    float dy = *src_dy;
-
-    HitBox bounds = {
-        .x = src.x + fminf(0.0f, dx),
-        .y = src.y + fminf(0.0f, dy),
-        .w = src.w + fabsf(dx),
-        .h = src.h + fabsf(dy),
-        .push_weight = src.push_weight
-    };
-
-    return bounds;
-}
-//　处理和静态表面的碰撞,可以不用考虑这么复杂
+/* Resolve horizontal motion first, then vertical motion at the corrected X. */
 void handle_maps_collision(HitBox src, float *src_dx, float *src_dy) {
   if (*src_dx == 0 && *src_dy == 0)
     return;
-  float hit_t;
-  float obs_dx = 0;
-  float obs_dy = 0;
-  HitBox swept_hitbox = GetSweptBounds(src, src_dx, src_dy);
+
   TLN_Tilemap tilemap = TLN_GetLayerTilemap(2);
   int tile_width = TLN_GetTileWidth(tilemap->tilesets[0]);
   int tile_height = TLN_GetTileHeight(tilemap->tilesets[0]);
-  for (int i = 0; i < (tilemap->rows * tilemap->cols); i++) {
-    Tile tile = tilemap->tiles[i];
-    if (tile.value == 0)
-      continue;
-    HitBox dest_hitbox = {.x = (i % tilemap->cols) * tile_width,
-                          .y = (i / tilemap->cols) * tile_height,
-                          .w = tile_width,
-                          .h = tile_height,
-                          .push_weight = INFINITY};
-    // 先筛选出潜在碰撞对象
-    if (!HitBox_collided(swept_hitbox, dest_hitbox))
+
+  for (int axis = 0; axis < 2; ++axis) {
+    float dx = axis == 0 ? *src_dx : 0;
+    float dy = axis == 1 ? *src_dy : 0;
+    if (dx == 0 && dy == 0)
       continue;
 
-    if (!swept_aabb(src, dest_hitbox, *src_dx, *src_dy, &hit_t))
-      continue;
-    resolve_displacement(src, dest_hitbox, src_dx, src_dy, &obs_dx, &obs_dy,
-                         hit_t);
+    float position = axis == 0 ? src.x : src.y;
+    float movement = axis == 0 ? dx : dy;
+    float nearest = INFINITY;
+    float target = position;
+    for (int i = 0; i < tilemap->rows * tilemap->cols; ++i) {
+      if (tilemap->tiles[i].index == 0)
+        continue;
+      HitBox dest = {
+          .x = (i % tilemap->cols) * tile_width,
+          .y = (i / tilemap->cols) * tile_height,
+          .w = tile_width,
+          .h = tile_height,
+      };
+      float hit_t;
+      if (swept_aabb(src, dest, dx, dy, &hit_t) && hit_t < nearest) {
+        nearest = hit_t;
+        if (hit_t == 0)
+          target = position;
+        else if (axis == 0)
+          target = dx > 0 ? dest.x - src.w : dest.x + dest.w;
+        else
+          target = dy > 0 ? dest.y - src.h : dest.y + dest.h;
+      }
+    }
+
+    if (nearest != INFINITY) {
+      /* Stop at the boundary directly; multiplying by hit_t can overshoot. */
+      movement = target - position;
+      if ((movement > 0 && position + movement > target) ||
+          (movement < 0 && position + movement < target))
+        movement = nextafterf(movement, 0.0f);
+    }
+    if (axis == 0) {
+      *src_dx = movement;
+      src.x += movement;
+    } else {
+      *src_dy = movement;
+    }
   }
 }
