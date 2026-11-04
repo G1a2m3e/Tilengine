@@ -1,6 +1,7 @@
 #ifndef PLAY_H
 #define PLAY_H
 
+#include "collision_handler.h"
 #include "utils.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -13,7 +14,7 @@ typedef struct {
   float y;
   bool facing_right;
   PlayerState state;
-  Hitbox hitbox;
+  HitBox hitbox;
 } Player;
 
 extern void init_player(Player *player, const char *tmx_object_name,

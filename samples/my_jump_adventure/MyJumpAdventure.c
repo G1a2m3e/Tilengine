@@ -2,12 +2,9 @@
 #include "Tilengine.h"
 #include "game.h"
 #include <stdio.h>
+#include <string.h>
 
-#define SCREEN_WIDTH (35 * 16)
-#define SCREEN_HEIGHT (15 * 16)
 #define TMX_FILE_NAME "my_jump_adventure.tmx"
-/* LoadWorld reverses TMX order: fruits=0, player=1, maps=2, background=3. */
-#define PLAYER_LAYER 0
 
 static void main_loop(uint32_t frame);
 
@@ -25,7 +22,8 @@ int main(void) {
     if (info.layers[i].type == LAYER_OBJECT)
       num_sprites += info.layers[i].num_objects;
   }
-  if (!TLN_Init(SCREEN_WIDTH, SCREEN_HEIGHT, info.num_layers, num_sprites, 0)) {
+  if (!TLN_Init(info.width * info.tilewidth, info.height * info.tileheight,
+                info.num_layers, num_sprites, 0)) {
     fprintf(stderr, "Failed to initialize Tilengine\n");
     return 1;
   }

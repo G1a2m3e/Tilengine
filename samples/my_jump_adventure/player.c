@@ -1,5 +1,6 @@
 #include "player.h"
 #include "Tilengine.h"
+#include "collision_handler.h"
 #include "utils.h"
 
 static TLN_Spriteset idle_set;
@@ -25,17 +26,18 @@ void init_player(Player *player, const char *tmx_object_name,
   player->state = IDLE;
   player->hitbox = load_object_hitbox("my_jump_adventure.tmx", 72);
 }
-static void move_to_right(Player *player) {
+
+static int move_to_right(Player *player) {
   player->facing_right = true;
   player->state = RUNNING;
-  player->x += 2;
   TLN_SetSpriteFlags(PLAYER_SPRITES, 0);
+  return 2;
 }
-static void move_to_left(Player *player) {
+static int move_to_left(Player *player) {
   player->facing_right = false;
   player->state = RUNNING;
-  player->x -= 2;
   TLN_SetSpriteFlags(PLAYER_SPRITES, FLAG_FLIPX);
+  return -2;
 }
 static void show_idle(Player *player) {
   TLN_SetSpriteSet(PLAYER_SPRITES, idle_set);
@@ -54,12 +56,26 @@ void update_player(Player *player, uint32_t frame) {
 
   bool right = TLN_GetInput(INPUT_RIGHT);
   bool left = TLN_GetInput(INPUT_LEFT);
+  float dx = 0;
+  float dy = 0;
   if (right) {
-    move_to_right(player);
+    dx = move_to_right(player);
   }
   if (left) {
-    move_to_left(player);
+    dx = move_to_left(player);
   }
+  if (dx != 0 || dy != 0) {
+    HitBox rect = {
+        .x = player->x + player->hitbox.x,
+        .y = player->y + player->hitbox.y,
+        .w = player->hitbox.w,
+        .h = player->hitbox.h,
+        .push_weight = 1,
+    };
+    handle_maps_collision(rect, &dx, &dy);
+  }
+  player->x += dx;
+  player->y += dy;
   if (last_x == player->x && last_y == player->y)
     player->state = IDLE;
 
