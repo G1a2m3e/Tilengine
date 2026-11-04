@@ -11,7 +11,7 @@ static TLN_Sequence idle_seq;
 static TLN_Sequence running_seq;
 static PlayerState show_state;
 #define MOVE_SPEED 120.0f
-#define JUMP_SPEED 200.0f
+#define JUMP_SPEED 160.0f
 #define GRAVITY 300.0f
 
 void init_player(Player *player, const char *tmx_object_name,
@@ -33,7 +33,7 @@ void init_player(Player *player, const char *tmx_object_name,
   player->state = IDLE;
   player->velocity_y = 0.0f;
   player->grounded = true;
-  player->hitbox = load_object_hitbox("my_jump_adventure.tmx", 72);
+  player->hitbox_offset = load_object_hitbox("my_jump_adventure.tmx", 72);
 }
 
 static float move_to_right(Player *player, uint32_t elapsed) {
@@ -81,23 +81,22 @@ static void show_jumping(Player *player) {
   show_state = JUMPING_OR_FALLING;
 }
 
-bool is_grounded(Player *player) {
-  float dx = 0;
-  float dy = 2;
-
-  HitBox rect = {
-      .x = player->x + player->hitbox.x,
-      .y = player->y + player->hitbox.y,
-      .w = player->hitbox.w,
-      .h = player->hitbox.h,
-      .push_weight = 1,
+static HitBox get_player_hitbox(Player *player) {
+  HitBox box = {
+      .x = player->x + player->hitbox_offset.x_offset,
+      .y = player->y + player->hitbox_offset.y_offset,
+      .w = player->hitbox_offset.w,
+      .h = player->hitbox_offset.h,
   };
-  handle_maps_collision(rect, &dx, &dy);
-  return dy == 0;
+  return box;
+}
+
+bool is_grounded(Player *player) {
+  HitBox box = get_player_hitbox(player);
+  return handle_maps_collision(box, 0, 2).y == box.y;
 }
 
 void update_player(Player *player, uint32_t elapsed) {
-  PlayerState last_state = player->state;
   bool last_grounded = player->grounded;
   float last_x = player->x;
   float last_y = player->y;
@@ -136,20 +135,13 @@ void update_player(Player *player, uint32_t elapsed) {
     dy = jump_or_falling(player, elapsed);
   }
   if (dx != 0 || dy != 0) {
-    HitBox rect = {
-        .x = player->x + player->hitbox.x,
-        .y = player->y + player->hitbox.y,
-        .w = player->hitbox.w,
-        .h = player->hitbox.h,
-        .push_weight = 1,
-    };
-    float target_dy = dy;
-    handle_maps_collision(rect, &dx, &dy);
-    if (target_dy < 0 && dy == 0)
+    HitBox box = get_player_hitbox(player);
+    HitBox result = handle_maps_collision(box, dx, dy);
+    if (dy < 0 && result.y != box.y + dy)
       player->velocity_y = 0; // 碰到天花板时及时下落
+    player->x = result.x - player->hitbox_offset.x_offset;
+    player->y = result.y - player->hitbox_offset.y_offset;
   }
-  player->x += dx;
-  player->y += dy;
   if (player->grounded) {
     if (player->x == last_x && player->y == last_y) {
       player->state = IDLE;

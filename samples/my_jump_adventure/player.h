@@ -13,13 +13,13 @@ typedef struct {
   float y;
   bool facing_right;
   PlayerState state;
-  HitBox hitbox;
+  HitBoxOffset hitbox_offset;
   float velocity_y;
   bool grounded;
 } Player;
 
 extern void init_player(Player *player, const char *tmx_object_name,
-                 const char *spriteset_name);
+                        const char *spriteset_name);
 
 extern void update_player(Player *player, uint32_t frame);
 

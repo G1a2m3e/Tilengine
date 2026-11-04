@@ -4,7 +4,7 @@
  <tile id="0">
   <image source="Main Characters/Virtual Guy/player.png" width="32" height="32"/>
   <objectgroup draworder="index" id="2">
-   <object id="1" x="5" y="8" width="22" height="24"/>
+   <object id="6" x="5" y="4" width="22" height="28"/>
   </objectgroup>
  </tile>
 </tileset>

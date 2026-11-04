@@ -4,6 +4,7 @@
 #include "../../src/simplexml.h"
 #include "../src/Tilemap.h"
 #include "Tilengine.h"
+#include "player.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -211,7 +212,7 @@ static void parse_xml(const char *filename, SimpleXmlTagHandler handler) {
 }
 
 static struct {
-  HitBox box;
+  HitBoxOffset box;
   int object_id, current_object;
   uint32_t gid, current_gid;
   int target_tile, current_tile;
@@ -253,9 +254,9 @@ static void *read_HitBox(SimpleXmlParser parser, SimpleXmlEvent event,
              !HitBox_loader.found) {
       float number = strtof(value, NULL);
       if (strcmp(attribute, "x") == 0)
-        HitBox_loader.box.x = number;
+        HitBox_loader.box.x_offset = number;
       else if (strcmp(attribute, "y") == 0)
-        HitBox_loader.box.y = number;
+        HitBox_loader.box.y_offset = number;
       else if (strcmp(attribute, "width") == 0)
         HitBox_loader.box.w = number;
       else if (strcmp(attribute, "height") == 0)
@@ -273,7 +274,7 @@ static void *read_HitBox(SimpleXmlParser parser, SimpleXmlEvent event,
   return read_HitBox;
 }
 
-HitBox load_object_hitbox(const char *tmx_file, int object_id) {
+HitBoxOffset load_object_hitbox(const char *tmx_file, int object_id) {
   memset(&HitBox_loader, 0, sizeof(HitBox_loader));
   HitBox_loader.object_id = object_id;
   HitBox_loader.current_tile = -1;
@@ -303,57 +304,43 @@ HitBox load_object_hitbox(const char *tmx_file, int object_id) {
 }
 
 /* Resolve horizontal motion first, then vertical motion at the corrected X. */
-void handle_maps_collision(HitBox src, float *src_dx, float *src_dy) {
-  if (*src_dx == 0 && *src_dy == 0)
-    return;
+HitBox handle_maps_collision(HitBox src, float dx, float dy) {
+  if (dx == 0 && dy == 0)
+    return src;
 
   TLN_Tilemap tilemap = TLN_GetLayerTilemap(2);
   int tile_width = TLN_GetTileWidth(tilemap->tilesets[0]);
   int tile_height = TLN_GetTileHeight(tilemap->tilesets[0]);
 
   for (int axis = 0; axis < 2; ++axis) {
-    float dx = axis == 0 ? *src_dx : 0;
-    float dy = axis == 1 ? *src_dy : 0;
-    if (dx == 0 && dy == 0)
+    float vx = axis == 0 ? dx : 0;
+    float vy = axis == 1 ? dy : 0;
+    if (vx == 0 && vy == 0)
       continue;
 
-    float position = axis == 0 ? src.x : src.y;
-    float movement = axis == 0 ? dx : dy;
-    float nearest = INFINITY;
-    float target = position;
+    float nearest = 1.0f;
+    float target = axis == 0 ? src.x + dx : src.y + dy;
     for (int i = 0; i < tilemap->rows * tilemap->cols; ++i) {
       if (tilemap->tiles[i].index == 0)
         continue;
-      HitBox dest = {
-          .x = (i % tilemap->cols) * tile_width,
-          .y = (i / tilemap->cols) * tile_height,
-          .w = tile_width,
-          .h = tile_height,
-      };
+      HitBox tile = {.x = (i % tilemap->cols) * tile_width,
+                    .y = (i / tilemap->cols) * tile_height,
+                    .w = tile_width, .h = tile_height};
       float hit_t;
-      if (swept_aabb(src, dest, dx, dy, &hit_t) && hit_t < nearest) {
+      if (swept_aabb(src, tile, vx, vy, &hit_t) && hit_t <= nearest) {
         nearest = hit_t;
         if (hit_t == 0)
-          target = position;
+          target = axis == 0 ? src.x : src.y;
         else if (axis == 0)
-          target = dx > 0 ? dest.x - src.w : dest.x + dest.w;
+          target = dx > 0 ? tile.x - src.w : tile.x + tile.w;
         else
-          target = dy > 0 ? dest.y - src.h : dest.y + dest.h;
+          target = dy > 0 ? tile.y - src.h : tile.y + tile.h;
       }
     }
-
-    if (nearest != INFINITY) {
-      /* Stop at the boundary directly; multiplying by hit_t can overshoot. */
-      movement = target - position;
-      if ((movement > 0 && position + movement > target) ||
-          (movement < 0 && position + movement < target))
-        movement = nextafterf(movement, 0.0f);
-    }
-    if (axis == 0) {
-      *src_dx = movement;
-      src.x += movement;
-    } else {
-      *src_dy = movement;
-    }
+    if (axis == 0)
+      src.x = target;
+    else
+      src.y = target;
   }
+  return src;
 }

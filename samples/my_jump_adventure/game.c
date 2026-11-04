@@ -1,5 +1,6 @@
 #include "game.h"
 #include "player.h"
+#include "Tilengine.h"
 
 static Player player;
 static uint32_t last_update_ms;

@@ -9,6 +9,11 @@ typedef struct {
   float push_weight;
 } HitBox;
 
+typedef struct {
+  float x_offset, y_offset;
+  float w, h;
+} HitBoxOffset;
+
 /*
   relative_dx:
   src和obstacle的相对x轴位移,比如如果两者都向右移动同样的距离,那么relative_dx = 0
@@ -26,9 +31,10 @@ extern bool resolve_displacement(HitBox src, HitBox obs, float *src_dx,
                                 float *src_dy, float *obs_dx, float *obs_dy,
                                 float hit_t);
 
-extern void handle_maps_collision(HitBox src, float *src_dx, float *src_dy);
+/* Returns the final hitbox position in world coordinates. */
+extern HitBox handle_maps_collision(HitBox src, float dx, float dy);
 
  /* First collision object on the tile referenced by the TMX object ID. */
-extern HitBox load_object_hitbox(const char *tmx_file, int object_id);
+extern HitBoxOffset load_object_hitbox(const char *tmx_file, int object_id);
 
 #endif
