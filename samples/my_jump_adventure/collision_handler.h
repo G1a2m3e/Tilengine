@@ -38,4 +38,8 @@ extern HitBox handle_maps_collision(HitBox src, float dx, float dy);
  /* First collision object on the tile referenced by the TMX object ID. */
 extern CollisionOffset load_object_hitbox(const char *tmx_file, int object_id);
 
+extern bool is_grounded(HitBox box);
+
+extern bool is_touching_wall(HitBox box);
+
 #endif

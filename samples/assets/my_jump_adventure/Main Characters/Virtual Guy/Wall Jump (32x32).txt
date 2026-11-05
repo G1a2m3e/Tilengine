@@ -1,0 +1,5 @@
+running1,0,0,32,32
+running2,32,0,32,32
+running3,64,0,32,32
+running4,96,0,32,32
+running5,128,0,32,32

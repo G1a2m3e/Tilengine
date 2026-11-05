@@ -8,33 +8,43 @@ static TLN_Spriteset idle_set;
 static TLN_Spriteset running_set;
 static TLN_Spriteset jump_set;
 static TLN_Spriteset double_jump_set;
+static TLN_Spriteset sliding_set;
 
 static TLN_Sequence idle_seq;
 static TLN_Sequence running_seq;
 static TLN_Sequence double_jump_seq;
+static TLN_Sequence sliding_seq;
 
 static ShowState show_state;
 static bool showing_double_jump = false;
 #define MOVE_SPEED 120.0f
+#define SLIDE_SPEED 90.0f
 // 数值越大，起跳和下落越快，高度保持不变。
 #define JUMP_PACE 1.9f
 #define JUMP_SPEED (160.0f * JUMP_PACE)
 #define GRAVITY (300.0f * JUMP_PACE * JUMP_PACE)
 
-void init_player(Player *player, const char *tmx_object_name,
-                 const char *spriteset_name) {
-  TLN_ObjectInfo obj = getObjectInfoByName(tmx_object_name);
-  idle_set = TLN_LoadSpriteset(spriteset_name);
+static void init_animation() {
+  idle_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Idle (32x32).png");
   running_set =
       TLN_LoadSpriteset("Main Characters/Virtual Guy/Run (32x32).png");
   jump_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Jump (32x32).png");
   double_jump_set =
       TLN_LoadSpriteset("Main Characters/Virtual Guy/Double Jump (32x32).png");
+  sliding_set =
+      TLN_LoadSpriteset("Main Characters/Virtual Guy/Wall Jump (32x32).png");
 
   idle_seq = TLN_CreateSpriteSequence("idle", idle_set, "idle", 3);
   running_seq = TLN_CreateSpriteSequence("running", running_set, "running", 3);
   double_jump_seq = TLN_CreateSpriteSequence("double_jump", double_jump_set,
                                              "double_jump", 3);
+  sliding_seq = TLN_CreateSpriteSequence("sliding", sliding_set, "sliding", 3);
+}
+
+void init_player(Player *player, const char *tmx_object_name) {
+  TLN_ObjectInfo obj = getObjectInfoByName(tmx_object_name);
+
+  init_animation();
   TLN_SetSpriteSet(PLAYER_SPRITES, idle_set);
   player->x = obj.x;
   player->y = obj.y;
@@ -66,6 +76,10 @@ static float jump_or_falling(Player *player, uint32_t elapsed) {
   float dy = player->velocity_y * dt + 0.5f * GRAVITY * dt * dt;
   player->velocity_y += GRAVITY * dt;
   return dy;
+}
+
+static float sliding(Player *player, uint32_t elapsed) {
+  return SLIDE_SPEED * (elapsed / 1000.0f);
 }
 
 static void show_idle(Player *player) {
@@ -103,6 +117,15 @@ static void show_jumping(Player *player) {
   show_state = SHOW_JUMPING_OR_FALLING;
 }
 
+static void show_sliding(Player *player) {
+  if (show_state == SHOW_SLIDING) {
+    return;
+  }
+  TLN_SetSpriteSet(PLAYER_SPRITES, sliding_set);
+  TLN_SetSpriteAnimation(PLAYER_SPRITES, sliding_seq, 0);
+  show_state = SHOW_SLIDING;
+}
+
 static HitBox get_player_hitbox(Player *player) {
   HitBox box = {
       .x = player->x + player->hitbox_offset.x_offset,
@@ -113,9 +136,14 @@ static HitBox get_player_hitbox(Player *player) {
   return box;
 }
 
-bool is_grounded(Player *player) {
+static bool is_player_grounded(Player *player) {
   HitBox box = get_player_hitbox(player);
-  return handle_maps_collision(box, 0, 2).y == box.y;
+  return is_grounded(box);
+}
+
+static bool is_player_touching_wall(Player *player) {
+  HitBox box = get_player_hitbox(player);
+  return is_touching_wall(box);
 }
 
 void update_player(Player *player, uint32_t elapsed) {
@@ -131,7 +159,7 @@ void update_player(Player *player, uint32_t elapsed) {
   float dx = 0;
   float dy = 0;
 
-  player->grounded = is_grounded(player);
+  player->grounded = is_player_grounded(player);
   if (player->grounded) {
     if (!last_grounded) {
       player->velocity_y = 0;
@@ -162,7 +190,18 @@ void update_player(Player *player, uint32_t elapsed) {
     }
   }
   if (player->state == JUMPING_OR_FALLING) {
-    dy = jump_or_falling(player, elapsed);
+    if (is_player_touching_wall(player) && player->velocity_y > 0) {
+      player->state = SLIDING;
+    } else {
+      dy = jump_or_falling(player, elapsed);
+    }
+  }
+  if (player->state == SLIDING) {
+    if (is_player_touching_wall(player)) {
+      dy = sliding(player, elapsed);
+    } else {
+      player->state = JUMPING_OR_FALLING;
+    }
   }
   if (dx != 0 || dy != 0) {
     HitBox box = get_player_hitbox(player);
@@ -193,5 +232,7 @@ void render_player(Player *player, uint32_t frame) {
     else {
       show_jumping(player);
     }
+  } else if (player->state == SLIDING) {
+    show_sliding(player);
   }
 }
