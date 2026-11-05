@@ -2,7 +2,7 @@
 #include "../../src/LoadFile.h"
 #include "../../src/LoadTMX.h"
 #include "../../src/simplexml.h"
-#include "../src/Tilemap.h"
+#include "../../src/Tilemap.h"
 #include "Tilengine.h"
 #include <math.h>
 #include <stdbool.h>
@@ -57,7 +57,11 @@ bool swept_aabb(HitBox src, HitBox obstacle, float relative_dx,
     ty_exit = fmaxf(t1, t2);
   }
 
-  // 两个轴的时间区间求交集
+  /**
+    两个轴的时间区间求交集
+    对于碰撞进入,两个轴都必须进入才算碰撞,所以取最大值
+    对于碰撞离开,两个轴只要有一个离开就算离开,所以取最小值
+  */
   float entry = fmaxf(tx_entry, ty_entry);
   float exit = fminf(tx_exit, ty_exit);
 
@@ -302,6 +306,23 @@ CollisionOffset load_object_hitbox(const char *tmx_file, int object_id) {
   return HitBox_loader.box;
 }
 
+// 某些图块允许玩家可以从底部穿过
+static bool allow_pass_through(HitBox src, HitBox obstacle, float dy,
+                               Tile tile) {
+  // Terrain's Tiled IDs are zero-based; index is one-based, value includes flags.
+  int id = (int)tile.index - 1;
+  bool one_way = tile.tileset == 0 &&
+                 (id == 17 || id == 18 || id == 19 ||
+                  id == 39 || id == 40 || id == 41 ||
+                  id == 61 || id == 62 || id == 63);
+
+  if (!one_way)
+    return false;
+
+  // 只有向下移动、且起始脚底位于平台顶面或上方时，才参与碰撞。
+  return dy <= 0.0f || src.y + src.h > obstacle.y;
+}
+
 /* Resolve horizontal motion first, then vertical motion at the corrected X. */
 HitBox handle_maps_collision(HitBox src, float dx, float dy) {
   if (dx == 0 && dy == 0)
@@ -323,9 +344,12 @@ HitBox handle_maps_collision(HitBox src, float dx, float dy) {
       if (tilemap->tiles[i].index == 0)
         continue;
       HitBox tile = {.x = (i % tilemap->cols) * tile_width,
-                    .y = (i / tilemap->cols) * tile_height,
-                    .w = tile_width, .h = tile_height};
+                     .y = (i / tilemap->cols) * tile_height,
+                     .w = tile_width,
+                     .h = tile_height};
       float hit_t;
+      if (allow_pass_through(src, tile, vy, tilemap->tiles[i]))
+        continue;
       if (swept_aabb(src, tile, vx, vy, &hit_t) && hit_t <= nearest) {
         nearest = hit_t;
         if (hit_t == 0)

@@ -21,6 +21,8 @@ typedef struct {
 
   relative_dy:
   src和obstacle的相对y轴位移,比如如果两者都向上移动同样的距离,那么relative_dy = 0
+  返回值true:发生碰撞,hit_t是碰撞发生的时间点,0表示碰撞发生在一帧的开始,1表示碰撞发生在一帧的结束
+  返回值false:没有发生碰撞,hit_t是无效值
 */
 extern bool swept_aabb(HitBox src, HitBox obstacle, float relative_dx, float relative_dy,
                       float *hit_t);
