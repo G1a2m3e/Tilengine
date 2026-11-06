@@ -323,7 +323,7 @@ static bool allow_pass_through(HitBox src, HitBox obstacle, float dy,
   return dy <= 0.0f || src.y + src.h > obstacle.y;
 }
 
-/* Resolve horizontal motion first, then vertical motion at the corrected X. */
+/* 允许沿墙滑动,所以需要x,y轴单独计算分量, x轴碰撞不影响y轴运动 */
 HitBox handle_maps_collision(HitBox src, float dx, float dy) {
   if (dx == 0 && dy == 0)
     return src;
@@ -331,6 +331,20 @@ HitBox handle_maps_collision(HitBox src, float dx, float dy) {
   TLN_Tilemap tilemap = TLN_GetLayerTilemap(2);
   int tile_width = TLN_GetTileWidth(tilemap->tilesets[0]);
   int tile_height = TLN_GetTileHeight(tilemap->tilesets[0]);
+
+  /* Swept bounds, including tiles touched exactly at the rectangle edges. */
+  int first_col = (int)ceilf(fminf(src.x, src.x + dx) / tile_width) - 1;
+  int last_col = (int)floorf((fmaxf(src.x, src.x + dx) + src.w) / tile_width);
+  int first_row = (int)ceilf(fminf(src.y, src.y + dy) / tile_height) - 1;
+  int last_row = (int)floorf((fmaxf(src.y, src.y + dy) + src.h) / tile_height);
+  if (first_col < 0)
+    first_col = 0;
+  if (last_col >= tilemap->cols)
+    last_col = tilemap->cols - 1;
+  if (first_row < 0)
+    first_row = 0;
+  if (last_row >= tilemap->rows)
+    last_row = tilemap->rows - 1;
 
   for (int axis = 0; axis < 2; ++axis) {
     float vx = axis == 0 ? dx : 0;
@@ -340,24 +354,28 @@ HitBox handle_maps_collision(HitBox src, float dx, float dy) {
 
     float nearest = 1.0f;
     float target = axis == 0 ? src.x + dx : src.y + dy;
-    for (int i = 0; i < tilemap->rows * tilemap->cols; ++i) {
-      if (tilemap->tiles[i].index == 0)
-        continue;
-      HitBox tile = {.x = (i % tilemap->cols) * tile_width,
-                     .y = (i / tilemap->cols) * tile_height,
-                     .w = tile_width,
-                     .h = tile_height};
-      float hit_t;
-      if (allow_pass_through(src, tile, vy, tilemap->tiles[i]))
-        continue;
-      if (swept_aabb(src, tile, vx, vy, &hit_t) && hit_t <= nearest) {
-        nearest = hit_t;
-        if (hit_t == 0)
-          target = axis == 0 ? src.x : src.y;
-        else if (axis == 0)
-          target = dx > 0 ? tile.x - src.w : tile.x + tile.w;
-        else
-          target = dy > 0 ? tile.y - src.h : tile.y + tile.h;
+
+    for (int row = first_row; row <= last_row; ++row) {
+      for (int col = first_col; col <= last_col; ++col) {
+        Tile cell = tilemap->tiles[row * tilemap->cols + col];
+        if (cell.index == 0)
+          continue;
+        HitBox tile = {.x = col * tile_width,
+                       .y = row * tile_height,
+                       .w = tile_width,
+                       .h = tile_height};
+        if (allow_pass_through(src, tile, vy, cell))
+          continue;
+        float hit_t;
+        if (swept_aabb(src, tile, vx, vy, &hit_t) && hit_t <= nearest) {
+          nearest = hit_t;
+          if (hit_t == 0)
+            target = axis == 0 ? src.x : src.y;
+          else if (axis == 0)
+            target = dx > 0 ? tile.x - src.w : tile.x + tile.w;
+          else
+            target = dy > 0 ? tile.y - src.h : tile.y + tile.h;
+        }
       }
     }
     if (axis == 0)
