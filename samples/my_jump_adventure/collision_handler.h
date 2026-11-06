@@ -44,4 +44,6 @@ extern bool is_grounded(HitBox box);
 
 extern bool is_touching_wall(HitBox box);
 
+extern bool is_colliding(HitBox box1, HitBox box2);
+
 #endif

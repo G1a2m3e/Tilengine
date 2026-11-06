@@ -6,4 +6,6 @@
 /* Search loaded object layers by name; id == 0 means no match. */
 extern TLN_ObjectInfo getObjectInfoByName(const char *name);
 
+extern TLN_ObjectList find_object_list(int objectgroup_id);
+
 #endif

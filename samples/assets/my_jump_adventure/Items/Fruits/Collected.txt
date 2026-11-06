@@ -1,0 +1,6 @@
+collected1,0,0,32,32
+collected2,32,0,32,32
+collected3,64,0,32,32
+collected4,96,0,32,32
+collected5,128,0,32,32
+collected6,160,0,32,32

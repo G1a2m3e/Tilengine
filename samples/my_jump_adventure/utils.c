@@ -1,5 +1,5 @@
 #include "utils.h"
-#include <stdlib.h>
+#include "../../src/ObjectList.h"
 #include <string.h>
 
 TLN_ObjectInfo getObjectInfoByName(const char *name) {
@@ -20,4 +20,13 @@ TLN_ObjectInfo getObjectInfoByName(const char *name) {
     }
   }
   return not_found;
+}
+
+TLN_ObjectList find_object_list(int objectgroup_id) {
+  for (int i = 0; i < TLN_GetNumLayers(); ++i) {
+    TLN_ObjectList list = TLN_GetLayerObjects(i);
+    if (list && list->id == objectgroup_id)
+      return list;
+  }
+  return NULL;
 }

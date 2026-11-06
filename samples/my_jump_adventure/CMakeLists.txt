@@ -4,6 +4,7 @@ add_executable(my_jump_adventure
     utils.c
     game.c
     collision_handler.c
+    fruit.c
     )
 
 target_include_directories(my_jump_adventure PRIVATE

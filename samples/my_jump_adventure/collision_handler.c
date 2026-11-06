@@ -433,3 +433,8 @@ bool is_touching_wall(HitBox box) {
   }
   return false;
 }
+
+bool is_colliding(HitBox box1, HitBox box2) {
+  return (box1.x < box2.x + box2.w && box1.x + box1.w > box2.x &&
+          box1.y < box2.y + box2.h && box1.y + box1.h > box2.y);
+}
