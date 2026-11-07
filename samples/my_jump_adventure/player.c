@@ -1,4 +1,5 @@
 #include "player.h"
+#include "../../src/ObjectList.h"
 #include "Tilengine.h"
 #include "collision_handler.h"
 #include "utils.h"
@@ -49,11 +50,18 @@ void init_player(int current_level, Player *player,
   TLN_SetSpriteSet(PLAYER_SPRITES, idle_set);
   player->x = obj.x;
   player->y = obj.y;
-  TLN_SetSpritePosition(PLAYER_SPRITES, player->x, player->y);
+  TLN_SetSpriteWorldPosition(PLAYER_SPRITES, player->x, player->y);
   TLN_SetSpriteAnimation(PLAYER_SPRITES, idle_seq, 0);
   int player_layer = get_object_layer(tmx_object_name);
-  if (player_layer >= 0)
-    TLN_DisableLayer(player_layer);
+  if (player_layer >= 0) {
+    TLN_ObjectList objects = TLN_GetLayerObjects(player_layer);
+    for (TLN_Object *item = objects->list; item; item = item->next) {
+      if (item->id == obj.id) {
+        item->visible = false;
+        break;
+      }
+    }
+  }
   player->facing_right = true;
   player->state = IDLE;
   player->velocity_y = 0.0f;
@@ -225,7 +233,7 @@ void update_player(Player *player, uint32_t elapsed) {
 }
 
 void render_player(Player *player, uint32_t frame) {
-  TLN_SetSpritePosition(0, player->x, player->y);
+  TLN_SetSpriteWorldPosition(0, player->x, player->y);
   if (player->state == RUNNING)
     show_running(player);
   else if (player->state == IDLE)

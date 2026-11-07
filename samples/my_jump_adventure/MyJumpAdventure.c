@@ -11,10 +11,20 @@
   1. 玩家叫virtual_guy
   2. 水果单独放在对象层fruits中
 */
-#define TMX_FILE_NAME "level1.tmx"
+#define SCREEN_WIDTH 560
+#define SCREEN_HEIGHT 240
 
 static int current_level = 0;
 static void main_loop(uint32_t frame);
+
+static int get_level_sprite_count(const TMXInfo *info) {
+  int count = 0;
+  for (int i = 0; i < info->num_layers; ++i) {
+    if (info->layers[i].type == LAYER_OBJECT)
+      count += info->layers[i].num_objects;
+  }
+  return count;
+}
 
 static void next_level() {
   current_level++;
@@ -25,21 +35,18 @@ static void next_level() {
     exit(1);
   }
 
-  int num_sprites = 0;
-  for (int i = 0; i < info.num_layers; ++i) {
-    if (info.layers[i].type == LAYER_OBJECT)
-      num_sprites += info.layers[i].num_objects;
-  }
+  int num_sprites = get_level_sprite_count(&info);
   if (!TLN_GetContext()) {
-    if (!TLN_Init(info.width * info.tilewidth, info.height * info.tileheight,
-                  info.num_layers, num_sprites, 0)) {
+    if (!TLN_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 32, 128, 0)) {
       fprintf(stderr, "Failed to initialize Tilengine\n");
       exit(1);
     }
   } else if (info.num_layers > TLN_GetNumLayers() ||
              num_sprites > TLN_GetNumSprites()) {
-    fprintf(stderr, "Insufficient layer or sprite capacity for level %d\n",
-            current_level);
+    fprintf(stderr,
+            "Insufficient capacity for level %d: layers %d/%d, sprites %d/%d\n",
+            current_level, info.num_layers, TLN_GetNumLayers(),
+            num_sprites, TLN_GetNumSprites());
     exit(1);
   }
   if (!TLN_LoadWorld(get_level_file_name(current_level), 0)) {

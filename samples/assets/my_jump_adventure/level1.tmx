@@ -32,7 +32,21 @@
  </layer>
  <group id="19" name="fruits">
   <objectgroup id="20" name="fruits">
+   <object id="98" gid="252" x="363.556" y="57.8286" width="32" height="32"/>
+   <object id="99" gid="252" x="341.867" y="81.0667" width="32" height="32"/>
+   <object id="109" gid="252" x="382.921" y="81" width="32" height="32"/>
+   <object id="112" gid="269" x="112.873" y="52.4064" width="32" height="32"/>
+   <object id="113" gid="269" x="93.9938" y="73" width="32" height="32"/>
+   <object id="114" gid="269" x="128.851" y="73" width="32" height="32"/>
+   <object id="115" gid="269" x="83.1493" y="95" width="32" height="32"/>
+   <object id="116" gid="269" x="112.873" y="95.7842" width="32" height="32"/>
+   <object id="117" gid="269" x="139.695" y="95" width="32" height="32"/>
+   <object id="120" gid="286" x="46" y="215" width="32" height="32"/>
+   <object id="121" gid="286" x="75.4033" y="215" width="32" height="32"/>
    <object id="122" gid="286" x="104.486" y="215" width="32" height="32"/>
+   <object id="123" gid="303" x="487.493" y="63.2508" width="32" height="32"/>
+   <object id="124" gid="303" x="487.493" y="91.67" width="32" height="32"/>
+   <object id="125" gid="303" x="487.493" y="119.556" width="32" height="32"/>
   </objectgroup>
  </group>
  <group id="17" name="player">
