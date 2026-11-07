@@ -25,7 +25,7 @@ static const char* object_types[] =
 	"spriteset",
 	"bitmap",
 	"sequence",
-	"sequence pack"
+	"sequence pack",
 	"object list",
 };
 

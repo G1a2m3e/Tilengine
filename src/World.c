@@ -4,6 +4,7 @@
 #include "Sprite.h"
 #include "LoadTMX.h"
 #include "Palette.h"
+#include <string.h>
 
 #define MAX_TMX_ITEM	100
 
@@ -35,7 +36,15 @@ bool TLN_LoadWorld(const char* filename, int first_layer)
 		case LAYER_TILE:
 		{
 			TLN_Tilemap tilemap = TLN_LoadTilemap(filename, tmxlayer->name);
-			TLN_SetLayerTilemap(layerindex, tilemap);
+			if (!tilemap)
+				return false;
+			if (!TLN_SetLayerTilemap(layerindex, tilemap))
+			{
+				TLN_Error error = TLN_GetLastError();
+				TLN_DeleteTilemap(tilemap);
+				TLN_SetLastError(error);
+				return false;
+			}
 		}
 		break;
 
@@ -118,7 +127,16 @@ void TLN_ReleaseWorld(void)
 			TLN_DeleteBitmap(layer->bitmap);
 			break;
 		}
+		layer->type = LAYER_NONE;
+		layer->tilemap = NULL;
+		layer->objects = NULL;
+		layer->bitmap = NULL;
+		layer->palette = NULL;
+		layer->draw = NULL;
+		layer->width = layer->height = 0;
 	}
+	memset(&tmxinfo, 0, sizeof(tmxinfo));
+	first = 0;
 }
 
 bool TLN_SetLayerParallaxFactor(int nlayer, float x, float y)

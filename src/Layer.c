@@ -42,6 +42,14 @@ bool TLN_SetLayer(int nlayer, TLN_Tileset tileset, TLN_Tilemap tilemap)
 	if (!CheckBaseObject(tileset, OT_TILESET))
 		return false;
 
+	/* Tile scanlines use these dimensions for division and wrapping. */
+	if (tileset->width <= 0 || tileset->height <= 0 ||
+		tilemap->cols <= 0 || tilemap->rows <= 0)
+	{
+		TLN_SetLastError(TLN_ERR_WRONG_SIZE);
+		return false;
+	}
+
 	layer->tilemap = tilemap;
 	layer->width = tilemap->cols*tileset->width;
 	layer->height = tilemap->rows*tileset->height;

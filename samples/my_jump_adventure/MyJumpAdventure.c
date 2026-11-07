@@ -30,12 +30,23 @@ static void next_level() {
     if (info.layers[i].type == LAYER_OBJECT)
       num_sprites += info.layers[i].num_objects;
   }
-  if (!TLN_Init(info.width * info.tilewidth, info.height * info.tileheight,
-                info.num_layers, num_sprites, 0)) {
-    fprintf(stderr, "Failed to initialize Tilengine\n");
+  if (!TLN_GetContext()) {
+    if (!TLN_Init(info.width * info.tilewidth, info.height * info.tileheight,
+                  info.num_layers, num_sprites, 0)) {
+      fprintf(stderr, "Failed to initialize Tilengine\n");
+      exit(1);
+    }
+  } else if (info.num_layers > TLN_GetNumLayers() ||
+             num_sprites > TLN_GetNumSprites()) {
+    fprintf(stderr, "Insufficient layer or sprite capacity for level %d\n",
+            current_level);
     exit(1);
   }
-  TLN_LoadWorld(get_level_file_name(current_level), 0);
+  if (!TLN_LoadWorld(get_level_file_name(current_level), 0)) {
+    fprintf(stderr, "Failed to load level %d: %s\n", current_level,
+            TLN_GetErrorString(TLN_GetLastError()));
+    exit(1);
+  }
 
   level_info.player_name = "virtual_guy";
   level_info.fruits_objectgroup_name = "fruits";
