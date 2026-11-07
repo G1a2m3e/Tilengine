@@ -44,6 +44,7 @@ struct ObjectList
 	int width;		/* map width, pixels */
 	int height;		/* map height, pixels */
 	int id;			/* id property */
+	char name[64];	/* objectgroup name */
 	bool visible;	/* visible property */
 	struct _Object* list;
 	struct _Object* last;

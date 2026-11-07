@@ -12,6 +12,7 @@ typedef struct
 {
 	TLN_LayerType type;
 	char name[64];
+	char class_name[64]; /* Tiled custom class, separate from the engine layer type */
 	char image[100];	/* bitmap name for bitmap layers */
 	int width;			/* layer width (tiles or pixels) */
 	int height;			/* layer height (tiles or pixels) */

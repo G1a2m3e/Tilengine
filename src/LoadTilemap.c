@@ -225,6 +225,8 @@ TLN_Tilemap TLN_LoadTilemap (const char *filename, const char *layername)
 		/* create */
 		tilemap = TLN_CreateTilemap(loader.layer->height, loader.layer->width, (Tile*)loader.data, tmxinfo.bgcolor, NULL);
 		tilemap->id = loader.layer->id;
+		strncpy(tilemap->class_name, loader.layer->class_name, sizeof(tilemap->class_name) - 1);
+		tilemap->class_name[sizeof(tilemap->class_name) - 1] = '\0';
 		tilemap->visible = loader.layer->visible;
 		tilemap->num_tilesets = tmxinfo.num_tilesets < MAX_TILESETS ? tmxinfo.num_tilesets : MAX_TILESETS;
 		memcpy(tilemap->tilesets, tilesets, sizeof(TLN_Tileset)*tilemap->num_tilesets);

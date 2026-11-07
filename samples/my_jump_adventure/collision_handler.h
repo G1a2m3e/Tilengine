@@ -37,8 +37,9 @@ extern bool resolve_displacement(HitBox src, HitBox obs, float *src_dx,
 /* Returns the final hitbox position in world coordinates. */
 extern HitBox handle_maps_collision(HitBox src, float dx, float dy);
 
- /* First collision object on the tile referenced by the TMX object ID. */
-extern CollisionOffset load_object_hitbox(const char *tmx_file, int object_id);
+/* First collision box for the first TMX object matching the exact name.
+   Returns a zero-initialized offset if the object or collision box is missing. */
+extern CollisionOffset load_object_hitbox(const char *tmx_file, const char *object_name);
 
 extern bool is_grounded(HitBox box);
 

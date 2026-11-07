@@ -121,6 +121,8 @@ static void* handler(SimpleXmlParser parser, SimpleXmlEvent evt,
 			{
 				loader.objects = TLN_CreateObjectList();
 				loader.objects->id = loader.layer->id;
+				strncpy(loader.objects->name, loader.layer->name, sizeof(loader.objects->name) - 1);
+				loader.objects->name[sizeof(loader.objects->name) - 1] = '\0';
 				loader.objects->visible = loader.layer->visible;
 			}
 		}

@@ -10,8 +10,10 @@ static Player player;
 static Fruit *fruits;
 static int fruit_count;
 static uint32_t last_update_ms;
+static float background_x = 0.0f;
+static int background_layer = -1;
 
-static void init_fruits(void) {
+static void clear_fruits(void) {
   for (int i = 0; i < fruit_count; ++i) {
     if (fruits[i].collect_sprite >= 0) {
       TLN_DisableSpriteAnimation(fruits[i].collect_sprite);
@@ -21,8 +23,12 @@ static void init_fruits(void) {
   free(fruits);
   fruits = NULL;
   fruit_count = 0;
+}
 
-  TLN_ObjectList list = find_object_list(20);
+static void init_fruits(const char *fruits_objectgroup_name) {
+  clear_fruits();
+
+  TLN_ObjectList list = find_object_list(fruits_objectgroup_name);
   if (!list)
     return;
 
@@ -44,10 +50,12 @@ static void init_fruits(void) {
   }
 }
 
-void init_game() {
+void init_game(int current_level, LevelInfo level_info) {
   last_update_ms = TLN_GetTicks();
-  init_player(&player, "virtual_guy");
-  init_fruits();
+  background_layer = get_background_layer();
+  background_x = 0.0f;
+  init_player(current_level, &player, level_info.player_name);
+  init_fruits(level_info.fruits_objectgroup_name);
 }
 
 static void check_fruit_collection(void) {
@@ -64,12 +72,34 @@ static void check_fruit_collection(void) {
   }
 }
 
-void update(uint32_t frame) {
+bool update(uint32_t frame) {
+  if (fruit_count == 0)
+    return false;
+
   uint32_t now = TLN_GetTicks();
   uint32_t elapsed = now - last_update_ms;
   last_update_ms = now;
   update_player(&player, elapsed);
   check_fruit_collection();
+
+  bool all_collected = true;
+  for (int i = 0; i < fruit_count; ++i) {
+    if (!fruits[i].collected) {
+      all_collected = false;
+      break;
+    }
+  }
+  if (all_collected) {
+    clear_fruits();
+    return false;
+  }
+
+  // elapsed 单位为毫秒，速度为每秒 20 像素
+  if (background_layer >= 0) {
+    background_x -= 20.0f * elapsed / 1000.0f;
+    TLN_SetLayerPosition(background_layer, (int)background_x, (int)background_x);
+  }
+  return true;
 }
 
 void render(uint32_t frame) { render_player(&player, frame); }

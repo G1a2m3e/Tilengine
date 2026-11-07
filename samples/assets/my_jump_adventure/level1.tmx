@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="23" nextobjectid="126">
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="24" nextobjectid="129">
  <tileset firstgid="1" source="Terrain.tsx"/>
  <tileset firstgid="243" source="player.tsx"/>
  <tileset firstgid="244" source="fruits.tsx"/>
@@ -7,17 +7,18 @@
  <tileset firstgid="269" source="apple.tsx"/>
  <tileset firstgid="286" source="cherry.tsx"/>
  <tileset firstgid="303" source="pineapple.tsx"/>
+ <tileset firstgid="320" source="number.tsx"/>
  <imagelayer id="5" name="background" repeatx="1" repeaty="1">
   <image source="Background/Purple.png" width="64" height="64"/>
  </imagelayer>
- <layer id="1" name="maps" width="35" height="15">
+ <layer id="1" name="maps" class="maps" width="35" height="15">
   <data encoding="csv">
 129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,
 129,36,37,35,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
 129,58,59,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
 129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
 129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
-129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,62,63,64,0,35,35,16,35,0,0,0,0,0,0,0,38,129,
+129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,35,35,16,35,0,0,0,0,0,0,0,38,129,
 129,0,0,0,0,0,35,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0,0,38,129,
 129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
 129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2147483690,2147483689,2147483688,38,129,
@@ -53,4 +54,7 @@
    <object id="72" name="virtual_guy" gid="243" x="246.602" y="160" width="32" height="32"/>
   </objectgroup>
  </group>
+ <objectgroup id="23" name="other">
+  <object id="128" gid="320" x="270.146" y="207.966" width="19" height="17"/>
+ </objectgroup>
 </map>

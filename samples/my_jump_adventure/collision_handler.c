@@ -216,7 +216,8 @@ static void parse_xml(const char *filename, SimpleXmlTagHandler handler) {
 
 static struct {
   CollisionOffset box;
-  int object_id, current_object;
+  const char *object_name;
+  bool name_matches, object_found;
   uint32_t gid, current_gid;
   int target_tile, current_tile;
   bool in_group, found;
@@ -229,16 +230,18 @@ static void *read_object_gid(SimpleXmlParser parser, SimpleXmlEvent event,
   if (strcmp(tag, "object") != 0)
     return read_object_gid;
   if (event == ADD_SUBTAG) {
-    HitBox_loader.current_object = 0;
+    HitBox_loader.name_matches = false;
     HitBox_loader.current_gid = 0;
   } else if (event == ADD_ATTRIBUTE) {
-    if (strcmp(attribute, "id") == 0)
-      HitBox_loader.current_object = atoi(value);
+    if (strcmp(attribute, "name") == 0)
+      HitBox_loader.name_matches = strcmp(value, HitBox_loader.object_name) == 0;
     else if (strcmp(attribute, "gid") == 0)
       HitBox_loader.current_gid = (uint32_t)strtoul(value, NULL, 10);
   } else if (event == FINISH_ATTRIBUTES &&
-             HitBox_loader.current_object == HitBox_loader.object_id)
+             HitBox_loader.name_matches && !HitBox_loader.object_found) {
     HitBox_loader.gid = HitBox_loader.current_gid & 0x0FFFFFFFu;
+    HitBox_loader.object_found = true;
+  }
   return read_object_gid;
 }
 
@@ -277,13 +280,16 @@ static void *read_HitBox(SimpleXmlParser parser, SimpleXmlEvent event,
   return read_HitBox;
 }
 
-CollisionOffset load_object_hitbox(const char *tmx_file, int object_id) {
+CollisionOffset load_object_hitbox(const char *tmx_file, const char *object_name) {
   memset(&HitBox_loader, 0, sizeof(HitBox_loader));
-  HitBox_loader.object_id = object_id;
+  if (!tmx_file || !tmx_file[0] || !object_name || !object_name[0])
+    return HitBox_loader.box;
+  HitBox_loader.object_name = object_name;
   HitBox_loader.current_tile = -1;
 
   TMXInfo map = {0};
-  TMXLoad(tmx_file, &map);
+  if (!TMXLoad(tmx_file, &map))
+    return HitBox_loader.box;
   parse_xml(tmx_file, read_object_gid);
   if (!HitBox_loader.gid)
     return HitBox_loader.box;
@@ -323,12 +329,35 @@ static bool allow_pass_through(HitBox src, HitBox obstacle, float dy,
   return dy <= 0.0f || src.y + src.h > obstacle.y;
 }
 
+static TLN_Tilemap get_collision_tilemap(void) {
+  if (!TLN_GetContext())
+    return NULL;
+
+  for (int layer = 0; layer < TLN_GetNumLayers(); ++layer) {
+    if (TLN_GetLayerType(layer) != LAYER_TILE)
+      continue;
+    TLN_Tilemap map = TLN_GetLayerTilemap(layer);
+    if (map && strcmp(map->class_name, "maps") == 0 &&
+        map->num_tilesets > 0 && map->tilesets[0] &&
+        map->cols > 0 && map->rows > 0 &&
+        TLN_GetTileWidth(map->tilesets[0]) > 0 &&
+        TLN_GetTileHeight(map->tilesets[0]) > 0)
+      return map;
+  }
+  return NULL;
+}
+
 /* 允许沿墙滑动,所以需要x,y轴单独计算分量, x轴碰撞不影响y轴运动 */
 HitBox handle_maps_collision(HitBox src, float dx, float dy) {
   if (dx == 0 && dy == 0)
     return src;
 
-  TLN_Tilemap tilemap = TLN_GetLayerTilemap(2);
+  TLN_Tilemap tilemap = get_collision_tilemap();
+  if (!tilemap) {
+    src.x += dx;
+    src.y += dy;
+    return src;
+  }
   int tile_width = TLN_GetTileWidth(tilemap->tilesets[0]);
   int tile_height = TLN_GetTileHeight(tilemap->tilesets[0]);
 
@@ -387,7 +416,9 @@ HitBox handle_maps_collision(HitBox src, float dx, float dy) {
 }
 
 bool is_grounded(HitBox box) {
-  TLN_Tilemap tilemap = TLN_GetLayerTilemap(2);
+  TLN_Tilemap tilemap = get_collision_tilemap();
+  if (!tilemap)
+    return false;
   int tw = TLN_GetTileWidth(tilemap->tilesets[0]);
   int th = TLN_GetTileHeight(tilemap->tilesets[0]);
 
@@ -409,7 +440,9 @@ bool is_grounded(HitBox box) {
 }
 
 bool is_touching_wall(HitBox box) {
-  TLN_Tilemap tilemap = TLN_GetLayerTilemap(2);
+  TLN_Tilemap tilemap = get_collision_tilemap();
+  if (!tilemap)
+    return false;
   int tw = TLN_GetTileWidth(tilemap->tilesets[0]);
   int th = TLN_GetTileHeight(tilemap->tilesets[0]);
 

@@ -41,7 +41,8 @@ static void init_animation() {
   sliding_seq = TLN_CreateSpriteSequence("sliding", sliding_set, "sliding", 3);
 }
 
-void init_player(Player *player, const char *tmx_object_name) {
+void init_player(int current_level, Player *player,
+                 const char *tmx_object_name) {
   TLN_ObjectInfo obj = getObjectInfoByName(tmx_object_name);
 
   init_animation();
@@ -50,14 +51,17 @@ void init_player(Player *player, const char *tmx_object_name) {
   player->y = obj.y;
   TLN_SetSpritePosition(PLAYER_SPRITES, player->x, player->y);
   TLN_SetSpriteAnimation(PLAYER_SPRITES, idle_seq, 0);
-  TLN_DisableLayer(0);
+  int player_layer = get_object_layer(tmx_object_name);
+  if (player_layer >= 0)
+    TLN_DisableLayer(player_layer);
   player->facing_right = true;
   player->state = IDLE;
   player->velocity_y = 0.0f;
   player->grounded = true;
   player->double_jumping = false;
   player->jump_was_down = false;
-  player->hitbox_offset = load_object_hitbox("my_jump_adventure.tmx", 72);
+  player->hitbox_offset =
+      load_object_hitbox(get_level_file_name(current_level), tmx_object_name);
 }
 
 static float move_to_right(Player *player, uint32_t elapsed) {

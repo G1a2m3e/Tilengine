@@ -24,6 +24,7 @@ struct Tilemap
 	int		cols;		/* columns */
 	int		bgcolor;	/* background color */
 	int		id;			/* id property */
+	char class_name[64]; /* Tiled custom class */
 	bool	visible;	/* visible property */
 	struct Tileset* tilesets[MAX_TILESETS]; /* attached tilesets */
 	int		num_tilesets;	/* actual amount of tilesets */

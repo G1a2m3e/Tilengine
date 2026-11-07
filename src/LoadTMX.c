@@ -74,6 +74,11 @@ static void* handler(SimpleXmlParser parser, SimpleXmlEvent evt,
 			TMXLayer* layer = &tmxinfo.layers[tmxinfo.num_layers];
 			if (!strcasecmp(szAttribute, "name"))
 				strncpy(layer->name, szValue, sizeof(layer->name));
+			else if (!strcasecmp(szAttribute, "class") || !strcasecmp(szAttribute, "type"))
+			{
+				strncpy(layer->class_name, szValue, sizeof(layer->class_name) - 1);
+				layer->class_name[sizeof(layer->class_name) - 1] = '\0';
+			}
 			else if (!strcasecmp(szAttribute, "id"))
 				layer->id = intvalue;
 			else if (!strcasecmp(szAttribute, "visible"))

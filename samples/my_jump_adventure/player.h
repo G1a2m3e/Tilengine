@@ -27,7 +27,8 @@ typedef struct {
   bool jump_was_down;
 } Player;
 
-extern void init_player(Player *player, const char *tmx_object_name);
+extern void init_player(int current_level, Player *player,
+                        const char *tmx_object_name);
 
 extern void update_player(Player *player, uint32_t frame);
 
