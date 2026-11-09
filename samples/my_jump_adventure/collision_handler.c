@@ -336,10 +336,8 @@ TLN_Tilemap get_collision_tilemap(void) {
     if (TLN_GetLayerType(layer) != LAYER_TILE)
       continue;
     TLN_Tilemap map = TLN_GetLayerTilemap(layer);
-    if (map && strcmp(map->class_name, "maps") == 0 &&
-        map->num_tilesets > 0 && map->tilesets[0] &&
-        map->cols > 0 && map->rows > 0 &&
-        TLN_GetTileWidth(map->tilesets[0]) > 0 &&
+    if (map && map->num_tilesets > 0 && map->tilesets[0] && map->cols > 0 &&
+        map->rows > 0 && TLN_GetTileWidth(map->tilesets[0]) > 0 &&
         TLN_GetTileHeight(map->tilesets[0]) > 0)
       return map;
   }
