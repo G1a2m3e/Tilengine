@@ -8,11 +8,31 @@ struct _TFallingPlatform {
   int direction;
   float init_y;
   gboolean initialized;
+  gboolean touched;
+  uint32_t delay_remaining;
 };
 
 static const float MOVE_SPEED = 7.0f;
+static const float FALL_GRAVITY = 600.0f;
+static const uint32_t FALL_DELAY_MS = 500;
+static TLN_Spriteset off_set;
 
 G_DEFINE_TYPE(TFallingPlatform, t_falling_platform, T_TYPE_TRAP)
+
+void t_falling_platform_touch(TFallingPlatform *self) {
+  g_return_if_fail(T_IS_FALLING_PLATFORM(self));
+  if (!self->touched && t_trap_get_data(T_TRAP(self))->active) {
+    self->touched = TRUE;
+    self->delay_remaining = FALL_DELAY_MS;
+  }
+}
+
+gboolean t_falling_platform_is_offscreen(TFallingPlatform *self,
+                                        int viewport_bottom) {
+  g_return_val_if_fail(T_IS_FALLING_PLATFORM(self), FALSE);
+  return self->falling &&
+         t_trap_get_data(T_TRAP(self))->hitbox.y >= viewport_bottom;
+}
 
 static void floating(TFallingPlatform *self, TTrapData *data,
                      uint32_t elapsed) {
@@ -34,10 +54,30 @@ static void t_falling_platform_update(TTrap *trap, Player *player,
                                       uint32_t elapsed) {
   TFallingPlatform *self = T_FALLING_PLATFORM(trap);
   TTrapData *data = t_trap_get_data(trap);
-  if (!self->falling) {
+  if (!self->touched) {
     floating(self, data, elapsed);
-  } else {
+    return;
   }
+
+  if (!self->falling) {
+    uint32_t waiting = MIN(elapsed, self->delay_remaining);
+    floating(self, data, waiting);
+    self->delay_remaining -= waiting;
+    elapsed -= waiting;
+    if (self->delay_remaining > 0)
+      return;
+
+    self->falling = TRUE;
+    TLN_DisableSpriteAnimation(data->sprite_index);
+    if (!off_set)
+      off_set = TLN_LoadSpriteset("Traps/Falling Platforms/Off.png");
+    if (off_set)
+      TLN_SetSpriteSet(data->sprite_index, off_set);
+  }
+
+  float dt = elapsed / 1000.0f;
+  data->hitbox.y += self->velocity_y * dt + 0.5f * FALL_GRAVITY * dt * dt;
+  self->velocity_y += FALL_GRAVITY * dt;
 }
 
 static void t_falling_platform_render(TTrap *trap, Player *player,

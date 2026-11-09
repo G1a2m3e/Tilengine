@@ -5,6 +5,7 @@
 #include "Tilengine.h"
 #include "collision_handler.h"
 #include "env_interaction.h"
+#include "falling_platform.h"
 #include "fruit.h"
 #include "player.h"
 #include "traps.h"
@@ -23,6 +24,7 @@ static float background_x = 0.0f;
 static int background_layer = -1;
 static int world_width;
 static int world_height;
+static int camera_y;
 
 static int clamp_camera(float position, int world_size, int screen_size) {
   int maximum = world_size - screen_size;
@@ -40,8 +42,8 @@ static void update_camera(void) {
       player.y + player.hitbox_offset.y_offset + player.hitbox_offset.h * 0.5f;
   int camera_x = clamp_camera(center_x - TLN_GetWidth() * 0.5f, world_width,
                               TLN_GetWidth());
-  int camera_y = clamp_camera(center_y - TLN_GetHeight() * 0.5f, world_height,
-                              TLN_GetHeight());
+  camera_y = clamp_camera(center_y - TLN_GetHeight() * 0.5f, world_height,
+                          TLN_GetHeight());
   TLN_SetWorldPosition(camera_x, camera_y);
 }
 
@@ -165,8 +167,17 @@ void render(uint32_t frame) {
   update_camera();
   render_player(&player, frame);
   GPtrArray *traps = get_traps_array();
-  for (guint i = 0; i < traps->len; ++i) {
+  for (guint i = 0; i < traps->len;) {
     TTrap *trap = g_ptr_array_index(traps, i);
+    if (T_IS_FALLING_PLATFORM(trap) &&
+        t_falling_platform_is_offscreen(T_FALLING_PLATFORM(trap),
+                                        camera_y + TLN_GetHeight()))
+      t_trap_deactivate(trap);
+    if (!t_trap_get_data(trap)->active) {
+      g_ptr_array_remove_index(traps, i);
+      continue;
+    }
     t_trap_render(trap, &player, elapsed);
+    ++i;
   }
 }

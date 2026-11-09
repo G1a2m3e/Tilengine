@@ -6,11 +6,7 @@
 G_DEFINE_TYPE_WITH_PRIVATE(TTrap, t_trap, G_TYPE_OBJECT)
 
 static void t_trap_finalize(GObject *object) {
-  TTrapPrivate *priv = t_trap_get_instance_private(T_TRAP(object));
-  if (priv->data.sprite_index >= 0) {
-    TLN_DisableSpriteAnimation(priv->data.sprite_index);
-    TLN_DisableSprite(priv->data.sprite_index);
-  }
+  t_trap_deactivate(T_TRAP(object));
   G_OBJECT_CLASS(t_trap_parent_class)->finalize(object);
 }
 
@@ -34,6 +30,7 @@ static TrapAnimation falling_animation = {
 static void t_trap_init(TTrap *self) {
   TTrapPrivate *priv = t_trap_get_instance_private(self);
   priv->data.sprite_index = -1;
+  priv->data.active = TRUE;
 }
 
 void t_trap_factory_init(void) {
@@ -52,6 +49,8 @@ void t_trap_update(TTrap *self, Player *player, uint32_t elapsed) {
   g_return_if_fail(T_IS_TRAP(self));
 
   TTrapData *data = t_trap_get_data(self);
+  if (!data->active)
+    return;
   data->previous_hitbox = data->hitbox;
   TTrapClass *klass = T_TRAP_GET_CLASS(self);
 
@@ -61,11 +60,24 @@ void t_trap_update(TTrap *self, Player *player, uint32_t elapsed) {
 
 void t_trap_render(TTrap *self, Player *player, uint32_t elapsed) {
   g_return_if_fail(T_IS_TRAP(self));
+  if (!t_trap_get_data(self)->active)
+    return;
 
   TTrapClass *klass = T_TRAP_GET_CLASS(self);
 
   if (klass->render)
     klass->render(self, player, elapsed);
+}
+
+void t_trap_deactivate(TTrap *self) {
+  g_return_if_fail(T_IS_TRAP(self));
+  TTrapData *data = t_trap_get_data(self);
+  data->active = FALSE;
+  if (data->sprite_index >= 0) {
+    TLN_DisableSpriteAnimation(data->sprite_index);
+    TLN_DisableSprite(data->sprite_index);
+    data->sprite_index = -1;
+  }
 }
 
 TTrapData *t_trap_get_data(TTrap *self) {

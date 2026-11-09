@@ -31,6 +31,7 @@ typedef struct {
   HitBox hitbox;
   HitBox previous_hitbox; // Position before this frame's platform update.
   int sprite_index;
+  gboolean active;
 } TTrapData;
 
 typedef struct {
@@ -43,6 +44,7 @@ TTrap *t_trap_obtain(int type, TLN_Object *obj);
 TTrapData *t_trap_get_data(TTrap *self);
 void t_trap_update(TTrap *self, Player *player, uint32_t elapsed);
 void t_trap_render(TTrap *self, Player *player, uint32_t elapsed);
+void t_trap_deactivate(TTrap *self);
 
 G_END_DECLS
 #endif

@@ -79,6 +79,8 @@ static TTrap *get_supporting_platform(Player *player) {
     TTrap *trap = g_ptr_array_index(traps, i);
     if (!T_IS_FALLING_PLATFORM(trap))
       continue;
+    if (!t_trap_get_data(trap)->active)
+      continue;
     HitBox platform = t_trap_get_data(trap)->hitbox;
     if (left < platform.x + platform.w && right > platform.x &&
         fabsf(bottom - platform.y) <= CONTACT_EPSILON)
@@ -93,10 +95,12 @@ void update_env_interaction(Player *player, uint32_t elapsed) {
 
   // Detect support at the old positions, before any platform moves.
   TTrap *support = get_supporting_platform(player);
+  if (support)
+    t_falling_platform_touch(T_FALLING_PLATFORM(support));
   for (guint i = 0; i < traps->len; ++i)
     t_trap_update(g_ptr_array_index(traps, i), player, elapsed);
 
-  if (support) {
+  if (support && t_trap_get_data(support)->active) {
     TTrapData *data = t_trap_get_data(support);
     HitBox box = {.x = player->x + player->hitbox_offset.x_offset,
                   .y = player->y + player->hitbox_offset.y_offset,
@@ -159,11 +163,14 @@ HitBox handle_traps_collision(HitBox src, float dx, float dy) {
 
   float bottom = src.y + src.h;
   float nearest = 1.0f;
+  TTrap *landing = NULL;
   for (guint i = 0; i < traps->len; ++i) {
     TTrap *trap = g_ptr_array_index(traps, i);
     if (!T_IS_FALLING_PLATFORM(trap))
       continue;
     TTrapData *data = t_trap_get_data(trap);
+    if (!data->active)
+      continue;
     HitBox previous = data->previous_hitbox;
     float platform_dx = data->hitbox.x - previous.x;
     float platform_dy = data->hitbox.y - previous.y;
@@ -178,7 +185,10 @@ HitBox handle_traps_collision(HitBox src, float dx, float dy) {
         left + src.w > previous.x) {
       nearest = hit_t;
       result.y = data->hitbox.y - src.h;
+      landing = trap;
     }
   }
+  if (landing)
+    t_falling_platform_touch(T_FALLING_PLATFORM(landing));
   return result;
 }
