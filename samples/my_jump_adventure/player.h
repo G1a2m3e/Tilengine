@@ -23,6 +23,7 @@ typedef struct {
   CollisionOffset hitbox_offset;
   float velocity_y;
   bool grounded;
+  bool touching_wall;
   bool double_jumping;
   bool jump_was_down;
 } Player;
@@ -30,7 +31,7 @@ typedef struct {
 extern void init_player(int current_level, Player *player,
                         const char *tmx_object_name);
 
-extern void update_player(Player *player, uint32_t frame);
+extern void update_player(Player *player, uint32_t elapsed);
 
 extern void render_player(Player *player, uint32_t frame);
 
