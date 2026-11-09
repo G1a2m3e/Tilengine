@@ -9,6 +9,7 @@
 #include <math.h>
 
 static GPtrArray *traps = NULL;
+static const float CONTACT_EPSILON = 0.001f;
 
 static void init_traps() {
   if (traps != NULL) {
@@ -66,9 +67,9 @@ static bool is_player_grounded_with_map(Player *player) {
   return false;
 }
 
-static bool is_player_grounded_with_traps(Player *player) {
+static TTrap *get_supporting_platform(Player *player) {
   if (!traps || player->velocity_y < 0)
-    return false;
+    return NULL;
 
   float left = player->x + player->hitbox_offset.x_offset;
   float right = left + player->hitbox_offset.w;
@@ -80,17 +81,40 @@ static bool is_player_grounded_with_traps(Player *player) {
       continue;
     HitBox platform = t_trap_get_data(trap)->hitbox;
     if (left < platform.x + platform.w && right > platform.x &&
-        fabsf(bottom - platform.y) <= 1.0f)
-      return true;
+        fabsf(bottom - platform.y) <= CONTACT_EPSILON)
+      return trap;
   }
-  return false;
+  return NULL;
+}
+
+void update_env_interaction(Player *player, uint32_t elapsed) {
+  if (!traps || !player)
+    return;
+
+  // Detect support at the old positions, before any platform moves.
+  TTrap *support = get_supporting_platform(player);
+  for (guint i = 0; i < traps->len; ++i)
+    t_trap_update(g_ptr_array_index(traps, i), player, elapsed);
+
+  if (support) {
+    TTrapData *data = t_trap_get_data(support);
+    HitBox box = {.x = player->x + player->hitbox_offset.x_offset,
+                  .y = player->y + player->hitbox_offset.y_offset,
+                  .w = player->hitbox_offset.w,
+                  .h = player->hitbox_offset.h};
+    float dx = data->hitbox.x - data->previous_hitbox.x;
+    float dy = data->hitbox.y - (box.y + box.h);
+    HitBox result = handle_maps_collision(box, dx, dy);
+    player->x = result.x - player->hitbox_offset.x_offset;
+    player->y = result.y - player->hitbox_offset.y_offset;
+  }
 }
 
 bool is_player_grounded(Player *player) {
   if (is_player_grounded_with_map(player)) {
     return true;
   }
-  if (is_player_grounded_with_traps(player)) {
+  if (get_supporting_platform(player)) {
     return true;
   }
   return false;
@@ -130,7 +154,7 @@ HitBox handle_traps_collision(HitBox src, float dx, float dy) {
   HitBox result = src;
   result.x += dx;
   result.y += dy;
-  if (!traps || dy <= 0)
+  if (!traps)
     return result;
 
   float bottom = src.y + src.h;
@@ -139,16 +163,21 @@ HitBox handle_traps_collision(HitBox src, float dx, float dy) {
     TTrap *trap = g_ptr_array_index(traps, i);
     if (!T_IS_FALLING_PLATFORM(trap))
       continue;
-    HitBox platform = t_trap_get_data(trap)->hitbox;
-    // 单向平台：只拦截从上方穿过顶面的移动。
-    if (bottom > platform.y || bottom + dy < platform.y)
+    TTrapData *data = t_trap_get_data(trap);
+    HitBox previous = data->previous_hitbox;
+    float platform_dx = data->hitbox.x - previous.x;
+    float platform_dy = data->hitbox.y - previous.y;
+    float relative_dy = dy - platform_dy;
+    // Sweep against the one-way top in the platform's reference frame.
+    // A rising platform can catch a stationary player too.
+    if (relative_dy <= 0 || bottom > previous.y + CONTACT_EPSILON)
       continue;
-    float hit_t = (platform.y - bottom) / dy;
-    float left = src.x + dx * hit_t;
-    if (hit_t <= nearest && left < platform.x + platform.w &&
-        left + src.w > platform.x) {
+    float hit_t = fmaxf(0.0f, (previous.y - bottom) / relative_dy);
+    float left = src.x + (dx - platform_dx) * hit_t;
+    if (hit_t <= nearest && left < previous.x + previous.w &&
+        left + src.w > previous.x) {
       nearest = hit_t;
-      result.y = platform.y - src.h;
+      result.y = data->hitbox.y - src.h;
     }
   }
   return result;

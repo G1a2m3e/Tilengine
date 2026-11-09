@@ -159,9 +159,6 @@ static PlayerMotion calculate_player_motion(Player *player,
 }
 
 static void apply_player_motion(Player *player, PlayerMotion *motion) {
-  if (motion->dx == 0 && motion->dy == 0)
-    return;
-
   HitBox box = get_player_hitbox(player);
   HitBox result = handle_maps_collision(box, motion->dx, motion->dy);
   result = handle_traps_collision(box, result.x - box.x, result.y - box.y);

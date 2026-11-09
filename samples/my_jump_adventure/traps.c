@@ -51,6 +51,8 @@ void t_trap_factory_init(void) {
 void t_trap_update(TTrap *self, Player *player, uint32_t elapsed) {
   g_return_if_fail(T_IS_TRAP(self));
 
+  TTrapData *data = t_trap_get_data(self);
+  data->previous_hitbox = data->hitbox;
   TTrapClass *klass = T_TRAP_GET_CLASS(self);
 
   if (klass->update)
@@ -90,6 +92,7 @@ TTrap *t_trap_obtain(int type, TLN_Object *obj) {
                .h = obj->height,
                .push_weight = INFINITY};
   priv->data.hitbox = hb;
+  priv->data.previous_hitbox = hb;
 
   TrapAnimation *animation =
       g_hash_table_lookup(trap_animation, GINT_TO_POINTER(type));

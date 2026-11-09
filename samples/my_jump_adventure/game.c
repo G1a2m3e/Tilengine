@@ -133,12 +133,8 @@ bool update(uint32_t frame) {
   uint32_t now = TLN_GetTicks();
   uint32_t elapsed = now - last_update_ms;
   last_update_ms = now;
+  update_env_interaction(&player, elapsed);
   update_player(&player, elapsed);
-  GPtrArray *traps = get_traps_array();
-  for (guint i = 0; i < traps->len; ++i) {
-    TTrap *trap = g_ptr_array_index(traps, i);
-    t_trap_update(trap, &player, elapsed);
-  }
   check_fruit_collection();
 
   bool all_collected = true;

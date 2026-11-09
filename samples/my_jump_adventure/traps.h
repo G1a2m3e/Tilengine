@@ -29,6 +29,7 @@ struct _TTrapClass {
 
 typedef struct {
   HitBox hitbox;
+  HitBox previous_hitbox; // Position before this frame's platform update.
   int sprite_index;
 } TTrapData;
 
