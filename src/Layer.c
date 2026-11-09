@@ -494,9 +494,9 @@ bool TLN_GetLayerTile (int nlayer, int x, int y, TLN_TileInfo* info)
 	ypos  = (y + column_offset) % layer->height;
 	if (ypos < 0)
 		ypos += layer->height;
-	srcy  = ypos & tileset->vmask;
+	srcy  = ypos % tileset->height;
 
-	ytile = ypos >> tileset->vshift;
+	ytile = ypos / tileset->height;
 	tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 
 	memset (info, 0, sizeof(TLN_TileInfo));
@@ -509,7 +509,7 @@ bool TLN_GetLayerTile (int nlayer, int x, int y, TLN_TileInfo* info)
 		tileset = tilemap->tilesets[tile->tileset];
 		info->index = tile->index - 1;
 		info->flags = tile->flags;
-		info->color = GetTilesetPixel (tileset, tile->index, srcx, srcy);
+		info->color = GetTilesetPixel (tileset, info->index, srcx, srcy);
 		info->type = tileset->attributes[info->index].type;
 	}
 	else

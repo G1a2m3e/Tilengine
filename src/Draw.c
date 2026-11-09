@@ -333,7 +333,8 @@ static bool DrawTiledScanline(int nlayer, uint32_t* dstpixel, int nscan, int tx1
 	int xpos = (layer->hstart + x) % layer->width;
 	int xtile = xpos >> tileset->hshift;
 
-	scan.width = scan.height = scan.stride = tileset->width;
+	scan.width = scan.stride = tileset->width;
+	scan.height = tileset->height;
 	scan.srcx = xpos & tileset->hmask;
 
 	/* fill whole scanline */
@@ -351,8 +352,8 @@ static bool DrawTiledScanline(int nlayer, uint32_t* dstpixel, int nscan, int tx1
 		else
 			ypos = (layer->vstart + nscan) % layer->height;
 
-		int ytile = ypos >> tileset->vshift;
-		scan.srcy = ypos & tileset->vmask;
+		int ytile = ypos / tileset->height;
+		scan.srcy = ypos % tileset->height;
 
 		TLN_Tile tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 
@@ -418,7 +419,8 @@ static bool DrawTiledScanlineScaling(int nlayer, uint32_t* dstpixel, int nscan, 
 	int xpos = (layer->hstart + fix2int(x*layer->dx)) % layer->width;
 	int xtile = xpos >> tileset->hshift;
 
-	scan.width = scan.height = scan.stride = tileset->width;
+	scan.width = scan.stride = tileset->width;
+	scan.height = tileset->height;
 	scan.srcx = xpos & tileset->hmask;
 
 	/* fill whole scanline */
@@ -437,8 +439,8 @@ static bool DrawTiledScanlineScaling(int nlayer, uint32_t* dstpixel, int nscan, 
 		else
 			ypos = ypos % layer->height;
 
-		int ytile = ypos >> tileset->vshift;
-		scan.srcy = ypos & tileset->vmask;
+		int ytile = ypos / tileset->height;
+		scan.srcy = ypos % tileset->height;
 
 		TLN_Tile tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 
@@ -528,7 +530,8 @@ static bool DrawTiledScanlineAffine(int nlayer, uint32_t* dstpixel, int nscan, i
 	const int dx = (x2 - x1) / twidth;
 	const int dy = (y2 - y1) / twidth;
 
-	scan.width = scan.height = scan.stride = tileset->width;
+	scan.width = scan.stride = tileset->width;
+	scan.height = tileset->height;
 	dstpixel += tx1;
 
 	while (tx1 < tx2)
@@ -537,10 +540,10 @@ static bool DrawTiledScanlineAffine(int nlayer, uint32_t* dstpixel, int nscan, i
 		ypos = abs((fix2int(y1) + layer->height)) % layer->height;
 
 		int xtile = xpos >> tileset->hshift;
-		int ytile = ypos >> tileset->vshift;
+		int ytile = ypos / tileset->height;
 
 		scan.srcx = xpos & tileset->hmask;
-		scan.srcy = ypos & tileset->vmask;
+		scan.srcy = ypos % tileset->height;
 		TLN_Tile tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 
 		/* paint if not empty tile */
@@ -584,7 +587,8 @@ static bool DrawTiledScanlinePixelMapping(int nlayer, uint32_t* dstpixel, int ns
 	const int vstart = layer->vstart + layer->height;
 	TLN_PixelMap* pixel_map = &layer->pixel_map[nscan*engine->framebuffer.width + x];
 
-	scan.width = scan.height = scan.stride = tileset->width;
+	scan.width = scan.stride = tileset->width;
+	scan.height = tileset->height;
 
 	while (x < tx2)
 	{
@@ -592,10 +596,10 @@ static bool DrawTiledScanlinePixelMapping(int nlayer, uint32_t* dstpixel, int ns
 		int ypos = abs(vstart + pixel_map->dy) % layer->height;
 
 		int xtile = xpos >> tileset->hshift;
-		int ytile = ypos >> tileset->vshift;
+		int ytile = ypos / tileset->height;
 
 		scan.srcx = xpos & tileset->hmask;
-		scan.srcy = ypos & tileset->vmask;
+		scan.srcy = ypos % tileset->height;
 		TLN_Tile tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 
 		/* paint if not empty tile */

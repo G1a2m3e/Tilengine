@@ -960,8 +960,8 @@ TLNAPI bool TLN_DeleteSpriteset (TLN_Spriteset spriteset);
 /*!
 	\brief Creates a tile-based tileset
 	\param numtiles	Number of tiles that the tileset will hold
-	\param width Width of each tile (must be multiple of 8)
-	\param height Height of each tile (must be multiple of 8)
+	\param width Width of each tile (power of two, from 2 to 256)
+	\param height Height of each tile (any positive integer)
 	\param palette Reference to the palette to assign
 	\param sp Optional reference to the optional sequence pack with associated tileset animations, can be NULL
 	\param attributes Optional array of attributes, one for each tile. Can be NULL

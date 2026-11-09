@@ -27,7 +27,6 @@ TLN_Tileset TLN_CreateTileset (int numtiles, int width, int height, TLN_Palette 
 {
 	TLN_Tileset tileset;
 	int hshift = 0;
-	int vshift = 0;
 	int c;
 	int size;
 	int size_tiles;
@@ -37,10 +36,8 @@ TLN_Tileset TLN_CreateTileset (int numtiles, int width, int height, TLN_Palette 
 		int mask = 1<<c;
 		if (mask==width)
 			hshift = c;
-		if (mask==height)
-			vshift = c;
 	}
-	if (!hshift || !vshift)
+	if (!hshift || height <= 0)
 	{
 		TLN_SetLastError (TLN_ERR_WRONG_SIZE);
 		return NULL;
@@ -59,9 +56,7 @@ TLN_Tileset TLN_CreateTileset (int numtiles, int width, int height, TLN_Palette 
 	tileset->width = width;
 	tileset->height = height;
 	tileset->hshift = hshift;
-	tileset->vshift = vshift;
 	tileset->hmask = width - 1;
-	tileset->vmask = height - 1;
 	tileset->numtiles = numtiles;
 	tileset->palette = palette;
 	tileset->sp = sp;
