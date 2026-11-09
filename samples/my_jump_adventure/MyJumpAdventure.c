@@ -1,7 +1,9 @@
+#include "../../src/LoadFile.h"
 #include "../../src/LoadTMX.h"
 #include "Tilengine.h"
 #include "game.h"
 #include "utils.h"
+#include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,11 +13,26 @@
   1. 玩家叫virtual_guy
   2. 水果单独放在对象层fruits中
 */
-#define SCREEN_WIDTH 560
-#define SCREEN_HEIGHT 240
+#define BUTTON_SPRITE 128
+#define TRANSITION_SPRITE (BUTTON_SPRITE + 2)
+#define BUTTON_WIDTH 20
+#define BUTTON_HEIGHT 20
+#define BUTTON_MARGIN 3
+#define TRANSITION_MS 350
 
 static int current_level = 0;
+static int requested_level;
+static struct {
+  TLN_Spriteset set;
+  int x;
+  bool enabled;
+} level_buttons[2];
+static TLN_Spriteset transition_set;
+static uint32_t transition_started;
+static enum { PLAYING, CLOSING, SWITCHING, OPENING } transition_state;
 static void main_loop(uint32_t frame);
+static int world_width;
+static int world_height;
 
 static int get_level_sprite_count(const TMXInfo *info) {
   int count = 0;
@@ -26,8 +43,8 @@ static int get_level_sprite_count(const TMXInfo *info) {
   return count;
 }
 
-static void next_level() {
-  current_level++;
+static void load_level(int level) {
+  current_level = level;
   TMXInfo info = {0};
   LevelInfo level_info = {0};
   if (!TMXLoad(get_level_file_name(current_level), &info)) {
@@ -35,18 +52,20 @@ static void next_level() {
     exit(1);
   }
 
+  world_width = info.width * info.tilewidth;
+  world_height = info.height * info.tileheight;
   int num_sprites = get_level_sprite_count(&info);
   if (!TLN_GetContext()) {
-    if (!TLN_Init(SCREEN_WIDTH, SCREEN_HEIGHT, 32, 128, 0)) {
+    if (!TLN_Init(world_width, world_height, 32, TRANSITION_SPRITE + 1, 0)) {
       fprintf(stderr, "Failed to initialize Tilengine\n");
       exit(1);
     }
   } else if (info.num_layers > TLN_GetNumLayers() ||
-             num_sprites > TLN_GetNumSprites()) {
+             num_sprites > BUTTON_SPRITE) {
     fprintf(stderr,
             "Insufficient capacity for level %d: layers %d/%d, sprites %d/%d\n",
-            current_level, info.num_layers, TLN_GetNumLayers(),
-            num_sprites, TLN_GetNumSprites());
+            current_level, info.num_layers, TLN_GetNumLayers(), num_sprites,
+            BUTTON_SPRITE);
     exit(1);
   }
   if (!TLN_LoadWorld(get_level_file_name(current_level), 0)) {
@@ -64,28 +83,151 @@ void clear_all_sprites(void) {
   int count = TLN_GetNumSprites();
 
   for (int i = 0; i < count; ++i) {
+    if (i >= BUTTON_SPRITE)
+      continue;
     TLN_DisableSpriteAnimation(i);
     TLN_DisableSprite(i);
   }
 }
 
+/* Transition.png is a 44x44 diamond; the largest size covers every corner. */
+static void show_transition(float progress) {
+  if (progress <= 0) {
+    TLN_ResetSpriteScaling(TRANSITION_SPRITE);
+    TLN_SetSpritePosition(TRANSITION_SPRITE, -44, -44);
+    return;
+  }
+  float size = (TLN_GetWidth() + TLN_GetHeight()) * 1.1f * progress;
+  TLN_SetSpriteScaling(TRANSITION_SPRITE, size / 44.0f, size / 44.0f);
+  TLN_SetSpritePosition(TRANSITION_SPRITE,
+                        (int)((TLN_GetWidth() - size) * 0.5f),
+                        (int)((TLN_GetHeight() - size) * 0.5f));
+}
+
+static bool level_exists(int level) {
+  return level > 0 && CheckFile(get_level_file_name(level));
+}
+
+static void update_level_buttons(void) {
+  for (int i = 0; i < 2; ++i) {
+    level_buttons[i].enabled = level_exists(current_level + (i == 0 ? -1 : 1));
+    TLN_SetSpriteBlendMode(BUTTON_SPRITE + i,
+                           level_buttons[i].enabled ? BLEND_NONE : BLEND_MIX50,
+                           0);
+  }
+}
+
+static void change_level(int level) {
+  if (transition_state != PLAYING || !level_exists(level))
+    return;
+  requested_level = level;
+  transition_state = CLOSING;
+  transition_started = TLN_GetTicks();
+  show_transition(0);
+}
+
+static void on_mouse_event(SDL_Event *event) {
+  if (event->type != SDL_MOUSEBUTTONDOWN ||
+      event->button.button != SDL_BUTTON_LEFT || transition_state != PLAYING)
+    return;
+
+  int width = TLN_GetWindowWidth(), height = TLN_GetWindowHeight();
+  int window_width = width, window_height = height;
+  SDL_Window *window = SDL_GetWindowFromID(event->button.windowID);
+  if (window)
+    SDL_GetWindowSize(window, &window_width, &window_height);
+  int x = (event->button.x - (window_width - width) / 2) * TLN_GetWidth() / width;
+  int y =
+      (event->button.y - (window_height - height) / 2) * TLN_GetHeight() / height;
+  for (int i = 0; i < 2; ++i) {
+    if (level_buttons[i].enabled && y >= BUTTON_MARGIN &&
+        y < BUTTON_MARGIN + BUTTON_HEIGHT && x >= level_buttons[i].x &&
+        x < level_buttons[i].x + BUTTON_WIDTH) {
+      change_level(current_level + (i == 0 ? -1 : 1));
+      return;
+    }
+  }
+}
+
+static bool init_level_buttons(void) {
+  const char *files[] = {"Menu/Buttons/Previous.png", "Menu/Buttons/Next.png"};
+  for (int i = 0; i < 2; ++i) {
+    level_buttons[i].set = TLN_LoadSpriteset(files[i]);
+    if (!level_buttons[i].set)
+      return false;
+    level_buttons[i].x = TLN_GetWidth() - BUTTON_MARGIN - BUTTON_WIDTH -
+                         (1 - i) * (BUTTON_WIDTH + BUTTON_MARGIN);
+    TLN_ConfigSprite(BUTTON_SPRITE + i, level_buttons[i].set, FLAG_PRIORITY);
+    TLN_EnableSpriteCollision(BUTTON_SPRITE + i, false);
+    // TLN_SetSpriteScaling(BUTTON_SPRITE + i, 1, 1);
+    TLN_SetSpritePosition(BUTTON_SPRITE + i, level_buttons[i].x, BUTTON_MARGIN);
+  }
+  update_level_buttons();
+  return true;
+}
+
 int main(void) {
   TLN_SetLoadPath("assets/my_jump_adventure");
 
-  next_level();
+  load_level(1);
+  if (!init_level_buttons()) {
+    fprintf(stderr, "Failed to load level buttons: %s\n",
+            TLN_GetErrorString(TLN_GetLastError()));
+    return 1;
+  }
+  transition_set = TLN_LoadSpriteset("Other/Transition.png");
+  if (!transition_set) {
+    fprintf(stderr, "Failed to load transition: %s\n",
+            TLN_GetErrorString(TLN_GetLastError()));
+    return 1;
+  }
+  TLN_ConfigSprite(TRANSITION_SPRITE, transition_set, FLAG_PRIORITY);
+  TLN_EnableSpriteCollision(TRANSITION_SPRITE, false);
+  show_transition(0);
 
   TLN_CreateWindow(NULL, 0);
+  TLN_SetSDLCallback(on_mouse_event);
+  reset_game_timer();
   TLN_SetMainTask(main_loop);
+  TLN_SetSDLCallback(NULL);
+  TLN_DisableSprite(TRANSITION_SPRITE);
+  TLN_DeleteSpriteset(transition_set);
+  for (int i = 0; i < 2; ++i) {
+    TLN_DisableSprite(BUTTON_SPRITE + i);
+    TLN_DeleteSpriteset(level_buttons[i].set);
+  }
   return 0;
 }
 
 static void main_loop(uint32_t frame) {
-  bool switch_level = !update(frame);
-  if (switch_level) {
+  if (transition_state == SWITCHING) {
     clear_all_sprites();
     TLN_ReleaseWorld();
-    next_level();
+    load_level(requested_level);
+    update_level_buttons();
+    render(frame);
+    transition_state = OPENING;
+    transition_started = TLN_GetTicks();
     return;
   }
+  if (transition_state != PLAYING) {
+    float progress =
+        (TLN_GetTicks() - transition_started) / (float)TRANSITION_MS;
+    if (progress < 1.0f) {
+      show_transition(transition_state == CLOSING ? progress : 1.0f - progress);
+    } else if (transition_state == CLOSING) {
+      show_transition(1);
+      transition_state = SWITCHING; // Present the fully covered frame first.
+    } else {
+      show_transition(0);
+      reset_game_timer();
+      transition_state = PLAYING;
+    }
+    return;
+  }
+
+  bool switch_level = !update(frame);
   render(frame);
+  if (switch_level)
+    change_level(current_level + 1);
 }

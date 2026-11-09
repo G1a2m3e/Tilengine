@@ -75,6 +75,10 @@ static void init_fruits(const char *fruits_objectgroup_name) {
   }
 }
 
+void reset_game_timer(void) {
+  last_update_ms = TLN_GetTicks();
+}
+
 void init_game(int current_level, LevelInfo level_info) {
   TMXInfo map = {0};
   world_width = TLN_GetWidth();
@@ -83,7 +87,7 @@ void init_game(int current_level, LevelInfo level_info) {
     world_width = map.width * map.tilewidth;
     world_height = map.height * map.tileheight;
   }
-  last_update_ms = TLN_GetTicks();
+  reset_game_timer();
   background_layer = get_background_layer();
   background_x = 0.0f;
   if (background_layer >= 0) {

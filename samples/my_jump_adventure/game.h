@@ -10,6 +10,7 @@ typedef struct {
 } LevelInfo;
 
 extern void init_game(int current_level, LevelInfo level_info);
+extern void reset_game_timer(void);
 extern bool update(uint32_t frame);
 extern void render(uint32_t frame);
 #endif
