@@ -57,9 +57,9 @@
  </group>
  <objectgroup id="8" name="other">
   <object id="11" name="02" gid="296" x="272" y="240" width="19" height="17" />
-  <object id="23" gid="413" x="130" y="128.333" width="32" height="10" type="falling_platform"/>
-  <object id="27" gid="413" x="192.667" y="144.333" width="32" height="10" type="falling_platform"/>
-  <object id="28" gid="413" x="267.333" y="123" width="32" height="10" type="falling_platform"/>
-  <object id="29" gid="413" x="357.333" y="137" width="32" height="10" type="falling_platform"/>
+  <object id="23" gid="413" x="130" y="128.333" width="32" height="10" type="100"/>
+  <object id="27" gid="413" x="192.667" y="144.333" width="32" height="10" type="100"/>
+  <object id="28" gid="413" x="267.333" y="123" width="32" height="10" type="100"/>
+  <object id="29" gid="413" x="357.333" y="137" width="32" height="10" type="100"/>
  </objectgroup>
 </map>

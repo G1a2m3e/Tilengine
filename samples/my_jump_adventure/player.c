@@ -2,6 +2,8 @@
 #include "../../src/ObjectList.h"
 #include "Tilengine.h"
 #include "collision_handler.h"
+#include "env_interaction.h"
+#include "game.h"
 #include "utils.h"
 #include <stdbool.h>
 
@@ -107,7 +109,7 @@ static PlayerInput read_player_input(Player *player) {
 
 static void update_player_contacts(Player *player) {
   HitBox box = get_player_hitbox(player);
-  player->grounded = is_grounded(box);
+  player->grounded = is_player_grounded(player);
   player->touching_wall = is_touching_wall(box);
 }
 
@@ -162,6 +164,7 @@ static void apply_player_motion(Player *player, PlayerMotion *motion) {
 
   HitBox box = get_player_hitbox(player);
   HitBox result = handle_maps_collision(box, motion->dx, motion->dy);
+  result = handle_traps_collision(box, result.x - box.x, result.y - box.y);
   if (motion->dy < 0 && result.y != box.y + motion->dy)
     player->velocity_y = 0;
 

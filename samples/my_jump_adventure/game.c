@@ -1,17 +1,24 @@
 #include "game.h"
-#include "../../src/ObjectList.h"
 #include "../../src/Layer.h"
 #include "../../src/LoadTMX.h"
+#include "../../src/ObjectList.h"
 #include "Tilengine.h"
+#include "collision_handler.h"
+#include "env_interaction.h"
 #include "fruit.h"
 #include "player.h"
+#include "traps.h"
 #include "utils.h"
+
+#include <glib.h>
 #include <stdlib.h>
+#include <string.h>
 
 static Player player;
 static Fruit *fruits;
 static int fruit_count;
 static uint32_t last_update_ms;
+static uint32_t last_render_ms;
 static float background_x = 0.0f;
 static int background_layer = -1;
 static int world_width;
@@ -27,14 +34,14 @@ static int clamp_camera(float position, int world_size, int screen_size) {
 }
 
 static void update_camera(void) {
-  float center_x = player.x + player.hitbox_offset.x_offset +
-                   player.hitbox_offset.w * 0.5f;
-  float center_y = player.y + player.hitbox_offset.y_offset +
-                   player.hitbox_offset.h * 0.5f;
-  int camera_x = clamp_camera(center_x - TLN_GetWidth() * 0.5f,
-                              world_width, TLN_GetWidth());
-  int camera_y = clamp_camera(center_y - TLN_GetHeight() * 0.5f,
-                              world_height, TLN_GetHeight());
+  float center_x =
+      player.x + player.hitbox_offset.x_offset + player.hitbox_offset.w * 0.5f;
+  float center_y =
+      player.y + player.hitbox_offset.y_offset + player.hitbox_offset.h * 0.5f;
+  int camera_x = clamp_camera(center_x - TLN_GetWidth() * 0.5f, world_width,
+                              TLN_GetWidth());
+  int camera_y = clamp_camera(center_y - TLN_GetHeight() * 0.5f, world_height,
+                              TLN_GetHeight());
   TLN_SetWorldPosition(camera_x, camera_y);
 }
 
@@ -53,7 +60,7 @@ static void clear_fruits(void) {
 static void init_fruits(const char *fruits_objectgroup_name) {
   clear_fruits();
 
-  TLN_ObjectList list = find_object_list(fruits_objectgroup_name);
+  TLN_ObjectList list = find_object_list_by_name(fruits_objectgroup_name);
   if (!list)
     return;
 
@@ -77,6 +84,7 @@ static void init_fruits(const char *fruits_objectgroup_name) {
 
 void reset_game_timer(void) {
   last_update_ms = TLN_GetTicks();
+  last_render_ms = TLN_GetTicks();
 }
 
 void init_game(int current_level, LevelInfo level_info) {
@@ -91,7 +99,8 @@ void init_game(int current_level, LevelInfo level_info) {
   background_layer = get_background_layer();
   background_x = 0.0f;
   if (background_layer >= 0) {
-    // Keep the existing autonomous background scroll independent of the camera.
+    // Keep the existing autonomous background scroll independent of the
+    // camera.
     TLN_SetLayerParallaxFactor(background_layer, 0.0f, 0.0f);
     Layer *background = GetLayer(background_layer);
     background->world.offsetx = 0;
@@ -99,6 +108,7 @@ void init_game(int current_level, LevelInfo level_info) {
   }
   init_player(current_level, &player, level_info.player_name);
   init_fruits(level_info.fruits_objectgroup_name);
+  init_env_interaction();
   update_camera();
 }
 
@@ -124,6 +134,11 @@ bool update(uint32_t frame) {
   uint32_t elapsed = now - last_update_ms;
   last_update_ms = now;
   update_player(&player, elapsed);
+  GPtrArray *traps = get_traps_array();
+  for (guint i = 0; i < traps->len; ++i) {
+    TTrap *trap = g_ptr_array_index(traps, i);
+    t_trap_update(trap, &player, elapsed);
+  }
   check_fruit_collection();
 
   bool all_collected = true;
@@ -148,6 +163,14 @@ bool update(uint32_t frame) {
 }
 
 void render(uint32_t frame) {
+  uint32_t now = TLN_GetTicks();
+  uint32_t elapsed = now - last_render_ms;
+  last_render_ms = now;
   update_camera();
   render_player(&player, frame);
+  GPtrArray *traps = get_traps_array();
+  for (guint i = 0; i < traps->len; ++i) {
+    TTrap *trap = g_ptr_array_index(traps, i);
+    t_trap_render(trap, &player, elapsed);
+  }
 }

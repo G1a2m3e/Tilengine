@@ -2,7 +2,6 @@
 #include "../../src/LoadFile.h"
 #include "../../src/LoadTMX.h"
 #include "../../src/simplexml.h"
-#include "../../src/Tilemap.h"
 #include "Tilengine.h"
 #include <math.h>
 #include <stdbool.h>
@@ -329,7 +328,7 @@ static bool allow_pass_through(HitBox src, HitBox obstacle, float dy,
   return dy <= 0.0f || src.y + src.h > obstacle.y;
 }
 
-static TLN_Tilemap get_collision_tilemap(void) {
+TLN_Tilemap get_collision_tilemap(void) {
   if (!TLN_GetContext())
     return NULL;
 
@@ -413,58 +412,6 @@ HitBox handle_maps_collision(HitBox src, float dx, float dy) {
       src.y = target;
   }
   return src;
-}
-
-bool is_grounded(HitBox box) {
-  TLN_Tilemap tilemap = get_collision_tilemap();
-  if (!tilemap)
-    return false;
-  int tw = TLN_GetTileWidth(tilemap->tilesets[0]);
-  int th = TLN_GetTileHeight(tilemap->tilesets[0]);
-
-  float bottom = box.y + box.h;
-  int row = (int)floorf(bottom / th);
-  if (row < 0 || row >= tilemap->rows || bottom != row * th)
-    return false;
-
-  int first = (int)floorf(box.x / tw);
-  int last = (int)ceilf((box.x + box.w) / tw) - 1;
-  if (first < 0) first = 0;
-  if (last >= tilemap->cols) last = tilemap->cols - 1;
-
-  for (int col = first; col <= last; ++col)
-    if (tilemap->tiles[row * tilemap->cols + col].index != 0)
-      return true;
-
-  return false;
-}
-
-bool is_touching_wall(HitBox box) {
-  TLN_Tilemap tilemap = get_collision_tilemap();
-  if (!tilemap)
-    return false;
-  int tw = TLN_GetTileWidth(tilemap->tilesets[0]);
-  int th = TLN_GetTileHeight(tilemap->tilesets[0]);
-
-  int first = (int)floorf(box.y / th);
-  int last = (int)ceilf((box.y + box.h) / th) - 1;
-  if (first < 0) first = 0;
-  if (last >= tilemap->rows) last = tilemap->rows - 1;
-
-  int left = (int)floorf(box.x / tw) - 1;
-  float right_edge = box.x + box.w;
-  int right = (int)floorf(right_edge / tw);
-  bool check_left = left >= 0 && left < tilemap->cols &&
-                    box.x == (left + 1) * tw;
-  bool check_right = right >= 0 && right < tilemap->cols &&
-                     right_edge == right * tw;
-
-  for (int row = first; row <= last; ++row) {
-    if ((check_left && tilemap->tiles[row * tilemap->cols + left].index != 0) ||
-        (check_right && tilemap->tiles[row * tilemap->cols + right].index != 0))
-      return true;
-  }
-  return false;
 }
 
 bool is_colliding(HitBox box1, HitBox box2) {

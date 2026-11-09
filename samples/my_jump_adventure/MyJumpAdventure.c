@@ -4,6 +4,7 @@
 #include "game.h"
 #include "utils.h"
 #include <SDL2/SDL.h>
+#include "traps.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -167,6 +168,7 @@ static bool init_level_buttons(void) {
 }
 
 int main(void) {
+  t_trap_factory_init();
   TLN_SetLoadPath("assets/my_jump_adventure");
 
   load_level(1);

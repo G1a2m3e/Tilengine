@@ -40,7 +40,7 @@ int get_object_layer(const char *object_name) {
   return -1;
 }
 
-TLN_ObjectList find_object_list(const char *name) {
+TLN_ObjectList find_object_list_by_name(const char *name) {
   if (!name || !name[0] || !TLN_GetContext())
     return NULL;
 

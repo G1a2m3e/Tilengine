@@ -10,7 +10,7 @@ extern TLN_ObjectInfo getObjectInfoByName(const char *name);
 extern int get_object_layer(const char *object_name);
 
 /* Returns the first object layer with the exact name, or NULL if not found. */
-extern TLN_ObjectList find_object_list(const char *name);
+extern TLN_ObjectList find_object_list_by_name(const char *name);
 
 /* Returns the first bitmap background layer index, or -1 if none is loaded. */
 extern int get_background_layer(void);

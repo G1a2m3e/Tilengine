@@ -1,5 +1,6 @@
 #ifndef SWEPT_AABB_H
 #define SWEPT_AABB_H
+#include "../../src/Tilemap.h"
 #include <stdbool.h>
 
 typedef struct {
@@ -41,10 +42,7 @@ extern HitBox handle_maps_collision(HitBox src, float dx, float dy);
    Returns a zero-initialized offset if the object or collision box is missing. */
 extern CollisionOffset load_object_hitbox(const char *tmx_file, const char *object_name);
 
-extern bool is_grounded(HitBox box);
-
-extern bool is_touching_wall(HitBox box);
-
 extern bool is_colliding(HitBox box1, HitBox box2);
 
+extern TLN_Tilemap get_collision_tilemap(void) ;
 #endif
