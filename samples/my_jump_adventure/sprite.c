@@ -1,5 +1,6 @@
 #include "sprite.h"
 #include "Tilengine.h"
+#include "utils.h"
 
 typedef struct {
   SpriteData data;
@@ -89,6 +90,7 @@ void spritelize(Sprite *self, TLN_Object *object, TLN_Spriteset sprite_set,
   TLN_SetSpriteWorldPosition(sprite_index, object->x, object->y);
   TLN_SetSpriteAnimation(sprite_index, seq, 0);
   TLN_SetSpriteFlags(sprite_index, object->flags);
+  bind_sprite_to_object(sprite_index, object);
   object->visible = false;
 }
 

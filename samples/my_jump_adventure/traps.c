@@ -1,6 +1,7 @@
 #include "traps.h"
 #include "collision_handler.h"
 #include "falling_platform.h"
+#include "saw.h"
 #include <math.h>
 
 G_DEFINE_TYPE_WITH_PRIVATE(TTrap, t_trap, T_TYPE_SPRITE)
@@ -28,6 +29,11 @@ static TrapAnimation falling_animation = {
     .prefix = "on",
 };
 
+static TrapAnimation saw_animation = {
+    .file = "Traps/Saw/On (38x38).png",
+    .prefix = "on",
+};
+
 static void t_trap_init(TTrap *self) {}
 
 void t_trap_factory_init(void) {
@@ -38,8 +44,11 @@ void t_trap_factory_init(void) {
 
   g_hash_table_insert(trap_types, GINT_TO_POINTER(FALLING_PLATFORM),
                       GSIZE_TO_POINTER(T_TYPE_FALLING_PLATFORM));
+  g_hash_table_insert(trap_types, GINT_TO_POINTER(SAW),
+                      GSIZE_TO_POINTER(T_TYPE_SAW));
   g_hash_table_insert(trap_animation, GINT_TO_POINTER(FALLING_PLATFORM),
                       &falling_animation);
+  g_hash_table_insert(trap_animation, GINT_TO_POINTER(SAW), &saw_animation);
 }
 
 TTrapData *t_trap_get_data(TTrap *self) {
@@ -57,7 +66,8 @@ TTrap *t_trap_obtain(int type, TLN_Object *obj) {
   if (!anim->set)
     anim->set = TLN_LoadSpriteset(anim->file);
   if (!anim->sequence)
-    anim->sequence = TLN_CreateSpriteSequence(anim->prefix, anim->set, anim->prefix, 3);
+    anim->sequence =
+        TLN_CreateSpriteSequence(anim->prefix, anim->set, anim->prefix, 3);
 
   TTrap *trap = g_object_new(gtype, NULL);
   Sprite *sprite = T_SPRITE(trap);

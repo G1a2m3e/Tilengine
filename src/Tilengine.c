@@ -99,6 +99,8 @@ static TLN_Engine create_context(int hres, int vres, int numlayers, int numsprit
 		for (c = 0; c < context->numsprites; c++)
 		{
 			Sprite* sprite = &context->sprites[c];
+			sprite->object_layer = -1;
+			sprite->object_id = -1;
 			sprite->draw = GetSpriteDraw(MODE_NORMAL);
 			sprite->blitter = SelectBlitter(true, false, false);
 			sprite->sx = sprite->sy = 1.0f;

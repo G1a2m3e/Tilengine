@@ -11,6 +11,7 @@ add_executable(my_jump_adventure
     traps.c
     collision_handler.c
     falling_platform.c
+    saw.c
     env_interaction.c
     )
 

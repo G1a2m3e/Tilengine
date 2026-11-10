@@ -48,10 +48,10 @@
    </objectgroup>
   </group>
   <objectgroup id="8" name="saws">
-   <object id="68" name="saw1" gid="364" x="389.667" y="116.333" width="38" height="38"/>
-   <object id="67" name="saw2" gid="364" x="428.333" y="135.667" width="38" height="38"/>
-   <object id="78" name="saw3" gid="364" x="134.333" y="116.667" width="38" height="38"/>
-   <object id="79" name="saw4" gid="364" x="173" y="178" width="38" height="38"/>
+   <object id="68" name="saw1" gid="364" x="389.667" y="116.333" width="38" height="38" type="101"/>
+   <object id="67" name="saw2" gid="364" x="428.333" y="135.667" width="38" height="38" type="101"/>
+   <object id="78" name="saw3" gid="364" x="134.333" y="116.667" width="38" height="38" type="101"/>
+   <object id="79" name="saw4" gid="364" x="173" y="178" width="38" height="38" type="101"/>
   </objectgroup>
  </group>
  <layer id="1" name="maps" class="maps" width="35" height="16">

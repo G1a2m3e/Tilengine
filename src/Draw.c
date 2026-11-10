@@ -153,6 +153,34 @@ bool DrawScanline(void)
 	if (engine->cb_raster)
 		engine->cb_raster(line);
 
+	/* Object-bound sprites are drawn during layer rendering, so prepare them first. */
+	if (engine->numsprites > 0)
+	{
+		memset(engine->collision, -1, engine->framebuffer.width * sizeof(uint16_t));
+		for (index = engine->list_sprites.first; index != -1;
+			 index = engine->sprites[index].list_node.next)
+		{
+			Sprite* sprite = &engine->sprites[index];
+			Layer* source = sprite->object_layer >= 0 ?
+				&engine->layers[sprite->object_layer] : NULL;
+			if (sprite->world_space && (sprite->dirty || engine->dirty ||
+				(source != NULL && source->dirty)))
+			{
+				int camera_x = engine->xworld;
+				int camera_y = engine->yworld;
+				if (source != NULL)
+				{
+					camera_x = (int)(camera_x * source->world.xfactor) - source->world.offsetx;
+					camera_y = (int)(camera_y * source->world.yfactor) - source->world.offsety;
+				}
+				sprite->x = sprite->xworld - camera_x;
+				sprite->y = sprite->yworld - camera_y;
+				UpdateSprite(sprite);
+				sprite->dirty = false;
+			}
+		}
+	}
+
 	/* background is bitmap */
 	if (engine->bgbitmap && engine->bgpalette)
 	{
@@ -193,23 +221,13 @@ bool DrawScanline(void)
 	/* draw regular sprites */
 	if (engine->numsprites > 0)
 	{
-		memset(engine->collision, -1, engine->framebuffer.width * sizeof(uint16_t));
 		list = &engine->list_sprites;
 		index = list->first;
 		while (index != -1)
 		{
 			Sprite* sprite = &engine->sprites[index];
 
-			/* update if dirty */
-			if (sprite->world_space && (sprite->dirty || engine->dirty))
-			{
-				sprite->x = sprite->xworld - engine->xworld;
-				sprite->y = sprite->yworld - engine->yworld;
-				UpdateSprite(sprite);
-				sprite->dirty = false;
-			}
-
-			if (check_sprite_coverage(sprite, line))
+			if (sprite->object_layer < 0 && check_sprite_coverage(sprite, line))
 			{
 				if (!(sprite->flags & FLAG_PRIORITY))
 					sprite->draw(index, scan, line, 0, 0);
@@ -252,7 +270,8 @@ bool DrawScanline(void)
 		while (index != -1)
 		{
 			Sprite* sprite = &engine->sprites[index];
-			if (check_sprite_coverage(sprite, line) && (sprite->flags & FLAG_PRIORITY))
+			if (sprite->object_layer < 0 && check_sprite_coverage(sprite, line) &&
+				(sprite->flags & FLAG_PRIORITY))
 				sprite->draw(index, scan, line, 0, 0);
 			index = sprite->list_node.next;
 		}
@@ -629,9 +648,20 @@ static bool DrawTiledScanlinePixelMapping(int nlayer, uint32_t* dstpixel, int ns
 static bool DrawSpriteScanline(int nsprite, uint32_t* dstscan, int nscan, int tx1, int tx2)
 {
 	Sprite* sprite = (Sprite*)&engine->sprites[nsprite];
+	int left = sprite->dstrect.x1;
+	int right = sprite->dstrect.x2;
+	if (tx2 > tx1)
+	{
+		if (left < tx1)
+			left = tx1;
+		if (right > tx2)
+			right = tx2;
+	}
+	if (left >= right)
+		return false;
 
 	Tilescan scan = { 0 };
-	scan.srcx = sprite->srcrect.x1;
+	scan.srcx = sprite->srcrect.x1 + left - sprite->dstrect.x1;
 	scan.srcy = sprite->srcrect.y1 + (nscan - sprite->dstrect.y1);
 	scan.width = sprite->info->w;
 	scan.height = sprite->info->h;
@@ -642,7 +672,7 @@ static bool DrawSpriteScanline(int nsprite, uint32_t* dstscan, int nscan, int tx
 	if ((flags & FLAG_ROTATE) && sprite->info->w != sprite->info->h)
 		flags &= ~FLAG_ROTATE;
 
-	const int w = sprite->dstrect.x2 - sprite->dstrect.x1;
+	const int w = right - left;
 
 	/* process rotate & flip flags */
 	scan.dx = 1;
@@ -651,12 +681,12 @@ static bool DrawSpriteScanline(int nsprite, uint32_t* dstscan, int nscan, int tx
 
 	/* blit scanline */
 	uint8_t* srcpixel = sprite->pixels + (scan.srcy*sprite->pitch) + scan.srcx;
-	uint32_t *dstpixel = dstscan + sprite->dstrect.x1;
+	uint32_t *dstpixel = dstscan + left;
 	sprite->blitter(srcpixel, sprite->palette, dstpixel, w, scan.dx, 0, sprite->blend);
 
 	if (sprite->do_collision)
 	{
-		uint16_t* dstpixel = engine->collision + sprite->dstrect.x1;
+		uint16_t* dstpixel = engine->collision + left;
 		DrawSpriteCollision(nsprite, srcpixel, dstpixel, w, scan.dx);
 	}
 	return true;
@@ -686,15 +716,28 @@ static bool DrawScalingSpriteScanline(int nsprite, uint32_t* dstscan, int nscan,
 	}
 	if (sprite->flags & FLAG_FLIPY)
 		srcy = int2fix(sprite->info->h) - srcy;
+	int left = sprite->dstrect.x1;
+	int right = sprite->dstrect.x2;
+	if (tx2 > tx1)
+	{
+		if (left < tx1)
+			left = tx1;
+		if (right > tx2)
+			right = tx2;
+	}
+	if (left >= right)
+		return false;
+	srcx += (left - sprite->dstrect.x1) * dx;
+	dstw = right - left;
 
 	/* blit scanline */
 	uint8_t* srcpixel = sprite->pixels + (fix2int(srcy)*sprite->pitch);
-	uint32_t* dstpixel = dstscan + sprite->dstrect.x1;
+	uint32_t* dstpixel = dstscan + left;
 	sprite->blitter(srcpixel, sprite->palette, dstpixel, dstw, dx, srcx, sprite->blend);
 
 	if (sprite->do_collision)
 	{
-		uint16_t* dstpixel = engine->collision + sprite->dstrect.x1;
+		uint16_t* dstpixel = engine->collision + left;
 		DrawSpriteCollisionScaling(nsprite, srcpixel, dstpixel, dstw, dx, srcx);
 	}
 	return true;
@@ -912,6 +955,24 @@ static bool DrawObjectScanline(int nlayer, uint32_t* dstpixel, int nscan, int tx
 
 	while (object != NULL)
 	{
+		/* Replace the original bitmap at this object's exact place in the layer. */
+		int index = object->sprite - 1;
+		if (index >= 0 && index < engine->numsprites)
+		{
+			Sprite* sprite = &engine->sprites[index];
+			if (sprite->ok && sprite->object_layer == nlayer && sprite->object_id == object->id)
+			{
+				if (check_sprite_coverage(sprite, nscan))
+				{
+					bool front = (sprite->flags & FLAG_PRIORITY) != 0;
+					sprite->draw(index, front ? engine->priority : dstscan, nscan, tx1, tx2);
+					priority |= front;
+				}
+				object = object->next;
+				continue;
+			}
+		}
+
 		/* swap width & height for rotated objects */
 		memcpy(&tmpobject, object, sizeof(struct _Object));
 		if (tmpobject.flags & FLAG_ROTATE)

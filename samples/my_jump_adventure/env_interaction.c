@@ -11,8 +11,7 @@
 
 static GPtrArray *traps = NULL;
 static Player *player;
-static const float CONTACT_EPSILON = 0.001f;
-static TTrap *get_supporting_platform(Player *player, bool previous);
+static TTrap *get_supporting_platform(Player *player);
 
 void init_traps() {
   if (traps != NULL) {
@@ -33,7 +32,6 @@ void init_traps() {
     }
   }
 }
-
 
 GPtrArray *get_traps_array() { return traps; }
 
@@ -62,27 +60,31 @@ void init_player(const char *player_name) {
 }
 
 void update_env_interaction(uint32_t elapsed) {
+  if (!player)
+    return;
+
   SpriteData *data = get_sprite_data(T_SPRITE(player));
   HitBox box = get_sprite_hitbox(T_SPRITE(player));
   float dx = data->desired_dx;
   float dy = data->desired_dy;
-  TTrap *support = get_supporting_platform(player, true);
-  if (support) {
-    HitBox platform = get_sprite_hitbox(T_SPRITE(support));
-    HitBox previous = t_trap_get_data(support)->previous_hitbox;
-    float carry_dx = platform.x - previous.x;
-    float left = box.x + dx + carry_dx;
-    if (left < platform.x + platform.w && left + box.w > platform.x) {
-      dx += carry_dx;
-      dy += platform.y - (box.y + box.h);
-      t_falling_platform_touch(T_FALLING_PLATFORM(support));
-    } else {
-      support = NULL;
+  bool supported = false;
+
+  if (traps) {
+    for (guint i = 0; i < traps->len; ++i) {
+      TTrap *trap = g_ptr_array_index(traps, i);
+      if (!get_sprite_data(T_SPRITE(trap))->active)
+        continue;
+
+      if (T_IS_FALLING_PLATFORM(trap)) {
+        if (!supported && player_get_velocity_y(player) >= 0)
+          supported = t_falling_platform_carry(
+              T_FALLING_PLATFORM(trap), box, &dx, &dy);
+      }
     }
   }
 
   HitBox result = handle_maps_collision(box, dx, dy);
-  if (!support)
+  if (!supported)
     result = handle_traps_collision(box, result.x - box.x, result.y - box.y);
   data->resolved_dx = result.x - box.x;
   data->resolved_dy = result.y - box.y;
@@ -121,25 +123,18 @@ static bool is_player_grounded_with_map(Player *player) {
   return false;
 }
 
-static TTrap *get_supporting_platform(Player *player, bool previous) {
-  SpriteData *data = get_sprite_data(T_SPRITE(player));
+static TTrap *get_supporting_platform(Player *player) {
   if (!traps || player_get_velocity_y(player) < 0)
     return NULL;
 
-  float left = data->rect.x + data->hitbox_offset.x_offset;
-  float right = left + data->hitbox_offset.w;
-  float bottom =
-      data->rect.y + data->hitbox_offset.y_offset + data->hitbox_offset.h;
+  HitBox box = get_sprite_hitbox(T_SPRITE(player));
   for (guint i = 0; i < traps->len; ++i) {
     TTrap *trap = g_ptr_array_index(traps, i);
     if (!T_IS_FALLING_PLATFORM(trap))
       continue;
     if (!get_sprite_data(T_SPRITE(trap))->active)
       continue;
-    HitBox platform = previous ? t_trap_get_data(trap)->previous_hitbox
-                               : get_sprite_hitbox(T_SPRITE(trap));
-    if (left < platform.x + platform.w && right > platform.x &&
-        fabsf(bottom - platform.y) <= CONTACT_EPSILON)
+    if (t_falling_platform_is_supporting(T_FALLING_PLATFORM(trap), box))
       return trap;
   }
   return NULL;
@@ -151,7 +146,7 @@ bool is_player_grounded(void) {
   if (is_player_grounded_with_map(player)) {
     return true;
   }
-  if (get_supporting_platform(player, false)) {
+  if (get_supporting_platform(player)) {
     return true;
   }
   return false;
@@ -187,6 +182,26 @@ bool is_touching_wall(HitBox box) {
   return false;
 }
 
+static bool check_trap_collision(TTrap *trap, HitBox src, float dx, float dy,
+                                 float *hit_t, HitBox *result) {
+  if (!get_sprite_data(T_SPRITE(trap))->active)
+    return false;
+
+  if (T_IS_FALLING_PLATFORM(trap))
+    return t_falling_platform_check_collision(
+        T_FALLING_PLATFORM(trap), src, dx, dy, hit_t, result);
+
+  return false;
+}
+
+static void notify_trap_contact(TTrap *trap, HitBox box) {
+  if (T_IS_FALLING_PLATFORM(trap)) {
+    TFallingPlatform *platform = T_FALLING_PLATFORM(trap);
+    if (t_falling_platform_is_supporting(platform, box))
+      t_falling_platform_touch(platform);
+  }
+}
+
 HitBox handle_traps_collision(HitBox src, float dx, float dy) {
   HitBox result = src;
   result.x += dx;
@@ -194,35 +209,23 @@ HitBox handle_traps_collision(HitBox src, float dx, float dy) {
   if (!traps)
     return result;
 
-  float bottom = src.y + src.h;
   float nearest = 1.0f;
   TTrap *landing = NULL;
   for (guint i = 0; i < traps->len; ++i) {
     TTrap *trap = g_ptr_array_index(traps, i);
-    if (!T_IS_FALLING_PLATFORM(trap) ||
-        !get_sprite_data(T_SPRITE(trap))->active)
-      continue;
-    HitBox platform = get_sprite_hitbox(T_SPRITE(trap));
-    HitBox previous = t_trap_get_data(trap)->previous_hitbox;
-    float relative_dy = dy - (platform.y - previous.y);
-    if (relative_dy <= 0 || bottom > previous.y + CONTACT_EPSILON)
-      continue;
-
-    float hit_t = fmaxf(0, (previous.y - bottom) / relative_dy);
-    float left = src.x + (dx - (platform.x - previous.x)) * hit_t;
-    if (hit_t <= nearest && left < previous.x + previous.w &&
-        left + src.w > previous.x) {
+    float hit_t;
+    HitBox candidate;
+    if (check_trap_collision(trap, src, dx, dy, &hit_t, &candidate) &&
+        hit_t <= nearest) {
       nearest = hit_t;
-      result.y = platform.y - src.h;
+      result = candidate;
       landing = trap;
     }
   }
   if (landing) {
     // 平台修正落点后仍需受地图约束，防止被抬进天花板。
     result = handle_maps_collision(src, result.x - src.x, result.y - src.y);
-    HitBox platform = get_sprite_hitbox(T_SPRITE(landing));
-    if (fabsf(result.y + src.h - platform.y) <= CONTACT_EPSILON)
-      t_falling_platform_touch(T_FALLING_PLATFORM(landing));
+    notify_trap_contact(landing, result);
   }
   return result;
 }

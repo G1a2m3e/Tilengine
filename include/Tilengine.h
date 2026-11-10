@@ -1849,6 +1849,17 @@ TLNAPI bool TLN_ConfigSprite (int nsprite, TLN_Spriteset spriteset, uint32_t fla
 TLNAPI bool TLN_SetSpriteSet (int nsprite, TLN_Spriteset spriteset);
 
 /*!
+	\brief Draws a sprite at the position of an object in an object layer's draw order
+	\param nsprite Sprite index [0, num_sprites - 1]
+	\param nlayer Source object layer, or -1 to restore global sprite ordering
+	\param object_id Source object ID in the loaded object list (ignored when nlayer is -1)
+	\remarks The sprite replaces the object's bitmap in the rendering order and follows
+	the source layer's visibility, window and world scrolling. Its position and animation
+	remain controlled by the sprite APIs. Disabling the sprite clears the binding.
+*/
+TLNAPI bool TLN_SetSpriteObject(int nsprite, int nlayer, int object_id);
+
+/*!
 	\deprecated Use \ref TLN_EnableSpriteFlag to enable or disable individual flags
 	\brief Sets flags for a given sprite
 	\param nsprite Id of the sprite [0, num_sprites - 1]

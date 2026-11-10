@@ -32,6 +32,7 @@ struct _Player {
   bool touching_wall;
   bool double_jumping;
   bool jump_was_down;
+  bool died;
   ShowState show_state;
 };
 
@@ -66,6 +67,7 @@ static void player_init(Player *self) {
   self->touching_wall = false;
   self->double_jumping = false;
   self->jump_was_down = false;
+  self->died = false;
 }
 
 static PlayerInput read_player_input(Player *player) {
@@ -187,7 +189,7 @@ static void player_render(Sprite *sprite, uint32_t elapsed) {
     break;
   }
 
-  TLN_SetSpriteFlags(data->sprite_index, player->facing_right ? 0 : FLAG_FLIPX);
+  TLN_EnableSpriteFlag(data->sprite_index, FLAG_FLIPX, !player->facing_right);
   if (player->show_state == next_show)
     return;
   TLN_SetSpriteSet(data->sprite_index, spriteset);

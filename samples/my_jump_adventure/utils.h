@@ -2,6 +2,10 @@
 #define UTILS_H
 
 #include "Tilengine.h"
+#include "../../src/ObjectList.h"
+
+/* Bind a generated sprite to its source object's position in TMX draw order. */
+extern bool bind_sprite_to_object(int sprite, const TLN_Object *object);
 
 /* Search loaded object layers by name; id == 0 means no match. */
 extern TLN_ObjectInfo getObjectInfoByName(const char *name);

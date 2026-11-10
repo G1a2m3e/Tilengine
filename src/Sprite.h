@@ -37,6 +37,8 @@ typedef struct Sprite
 	int				pitch;
 	int				num;
 	int				index;			/* spriteset picture index */
+	int				object_layer;	/* source object layer, -1 for global sprite order */
+	int				object_id;		/* source TMX object id */
 	int				x,y;			/* screen space location (TLN_SetSpritePosition) */
 	int				dx,dy;
 	int				xworld, yworld;	/* world space location (TLN_SetSpriteWorldPosition) */

@@ -32,6 +32,7 @@ typedef struct _Object
 	bool owns_bitmap;	/* false for shared image-collection bitmaps */
 	bool has_gid;
 	bool visible;
+	int sprite;		/* attached sprite index + 1; zero uses the original bitmap */
 	struct _Object* next;
 	TLN_Tileset tileset; // 解决整个对象层只能用一个图集的问题
 }

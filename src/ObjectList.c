@@ -200,6 +200,7 @@ static bool CloneObjectToList(TLN_ObjectList list, TLN_Object* data)
 		return false;
 
 	memcpy(object, data, sizeof(struct _Object));
+	object->sprite = 0;
 	if (object->owns_bitmap)
 		object->bitmap = TLN_CloneBitmap(data->bitmap);
 	add_to_list(list, object);
@@ -404,6 +405,12 @@ bool TLN_DeleteObjectList(TLN_ObjectList list)
 	struct _Object* object;
 	if (!CheckBaseObject(list, OT_OBJECTLIST))
 		return false;
+
+	/* Detach before freeing any node: bindings resolve IDs through this list. */
+	if (TLN_GetContext() != NULL)
+		for (object = list->list; object; object = object->next)
+			if (object->sprite > 0)
+				TLN_SetSpriteObject(object->sprite - 1, -1, 0);
 
 	/* delete nodes */
 	object = list->list;

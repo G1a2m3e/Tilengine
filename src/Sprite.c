@@ -18,12 +18,59 @@
 #include "Spriteset.h"
 #include "Tables.h"
 #include "Debug.h"
+#include "ObjectList.h"
 
 #ifdef _MSC_VER
 #define inline __inline
 #endif
 
 static void SelectSpriteBlitter (Sprite* sprite);
+
+static TLN_Object* FindSpriteObject(int nlayer, int object_id)
+{
+	if (nlayer < 0 || nlayer >= engine->numlayers)
+		return NULL;
+	TLN_ObjectList objects = engine->layers[nlayer].objects;
+	if (engine->layers[nlayer].type != LAYER_OBJECT || objects == NULL)
+		return NULL;
+	for (TLN_Object* object = objects->list; object; object = object->next)
+		if (object->id == object_id)
+			return object;
+	return NULL;
+}
+
+bool TLN_SetSpriteObject(int nsprite, int nlayer, int object_id)
+{
+	if (nsprite < 0 || nsprite >= engine->numsprites)
+	{
+		TLN_SetLastError(TLN_ERR_IDX_SPRITE);
+		return false;
+	}
+	if (nlayer < -1 || nlayer >= engine->numlayers)
+	{
+		TLN_SetLastError(TLN_ERR_IDX_LAYER);
+		return false;
+	}
+	TLN_Object* object = nlayer >= 0 ? FindSpriteObject(nlayer, object_id) : NULL;
+	if (nlayer >= 0 && (object == NULL ||
+		(object->sprite != 0 && object->sprite != nsprite + 1)))
+	{
+		TLN_SetLastError(TLN_ERR_REF_LIST);
+		return false;
+	}
+
+	Sprite* sprite = &engine->sprites[nsprite];
+	TLN_Object* previous = FindSpriteObject(sprite->object_layer, sprite->object_id);
+	if (previous != NULL && previous->sprite == nsprite + 1)
+		previous->sprite = 0;
+	sprite->object_layer = nlayer;
+	sprite->object_id = nlayer >= 0 ? object_id : -1;
+	sprite->dirty = true;
+	if (object != NULL)
+		object->sprite = nsprite + 1;
+	TLN_SetLastError(TLN_ERR_OK);
+	return true;
+}
 
 bool TLN_ConfigSprite (int nsprite, TLN_Spriteset spriteset, uint32_t flags)
 {
@@ -468,6 +515,7 @@ bool TLN_DisableSprite(int nsprite)
 	sprite->ok = false;
 	sprite->collision = false;
 	sprite->do_collision = false;
+	TLN_SetSpriteObject(nsprite, -1, 0);
 
 	/* disabled: remove from linked list */
 	if (enabled == true)

@@ -1,4 +1,5 @@
 #include "fruit.h"
+#include "utils.h"
 
 static TLN_Spriteset collected_set;
 static TLN_Sequence collected_seq;
@@ -29,7 +30,8 @@ void collect(Fruit *fruit) {
   if (!TLN_SetSpriteSet(sprite, collected_set))
     return;
 
-  TLN_SetSpriteFlags(sprite, FLAG_NONE);
+  TLN_SetSpriteFlags(sprite, fruit->object->flags);
+  bind_sprite_to_object(sprite, fruit->object);
   TLN_EnableSpriteCollision(sprite, false);
   if (!TLN_SetSpriteWorldPosition(sprite, fruit->object->x, fruit->object->y) ||
       !TLN_SetSpriteAnimation(sprite, collected_seq, 1)) {

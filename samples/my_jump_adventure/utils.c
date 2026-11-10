@@ -2,6 +2,21 @@
 #include "../../src/ObjectList.h"
 #include <string.h>
 
+bool bind_sprite_to_object(int sprite, const TLN_Object *object) {
+  if (!object || !TLN_GetContext())
+    return false;
+
+  for (int layer = 0; layer < TLN_GetNumLayers(); ++layer) {
+    TLN_ObjectList objects = TLN_GetLayerObjects(layer);
+    if (!objects)
+      continue;
+    for (TLN_Object *item = objects->list; item; item = item->next)
+      if (item == object)
+        return TLN_SetSpriteObject(sprite, layer, object->id);
+  }
+  return false;
+}
+
 TLN_ObjectInfo getObjectInfoByName(const char *name) {
   TLN_ObjectInfo not_found = {0};
   if (!name || !name[0] || !TLN_GetContext())
