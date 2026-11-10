@@ -3,9 +3,39 @@
 #include "Tilengine.h"
 #include "collision_handler.h"
 #include "env_interaction.h"
-#include "game.h"
-#include "utils.h"
+#include "sprite.h"
+#include <math.h>
 #include <stdbool.h>
+
+#define MOVE_SPEED 120.0f
+#define SLIDE_SPEED 90.0f
+// 数值越大，起跳和下落越快，高度保持不变。
+#define JUMP_PACE 1.9f
+#define JUMP_SPEED (160.0f * JUMP_PACE)
+#define GRAVITY (300.0f * JUMP_PACE * JUMP_PACE)
+
+typedef enum { IDLE, RUNNING, JUMPING_OR_FALLING, SLIDING } PlayerState;
+typedef enum {
+  SHOW_IDLE,
+  SHOW_RUNNING,
+  SHOW_JUMPING_OR_FALLING,
+  SHOW_DOUBLE_JUMPING,
+  SHOW_SLIDING
+} ShowState;
+
+struct _Player {
+  Sprite parent_instance;
+  bool facing_right;
+  PlayerState state;
+  float velocity_y;
+  bool grounded;
+  bool touching_wall;
+  bool double_jumping;
+  bool jump_was_down;
+  ShowState show_state;
+};
+
+G_DEFINE_TYPE(Player, player, T_TYPE_SPRITE)
 
 static TLN_Spriteset idle_set;
 static TLN_Spriteset running_set;
@@ -18,14 +48,6 @@ static TLN_Sequence running_seq;
 static TLN_Sequence double_jump_seq;
 static TLN_Sequence sliding_seq;
 
-static ShowState show_state;
-#define MOVE_SPEED 120.0f
-#define SLIDE_SPEED 90.0f
-// 数值越大，起跳和下落越快，高度保持不变。
-#define JUMP_PACE 1.9f
-#define JUMP_SPEED (160.0f * JUMP_PACE)
-#define GRAVITY (300.0f * JUMP_PACE * JUMP_PACE)
-
 typedef struct {
   int direction; // -1 向左，0 不移动，1 向右
   bool jump_pressed;
@@ -35,62 +57,15 @@ typedef struct {
   float dx, dy;
 } PlayerMotion;
 
-static void init_animation() {
-  idle_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Idle (32x32).png");
-  running_set =
-      TLN_LoadSpriteset("Main Characters/Virtual Guy/Run (32x32).png");
-  jump_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Jump (32x32).png");
-  double_jump_set =
-      TLN_LoadSpriteset("Main Characters/Virtual Guy/Double Jump (32x32).png");
-  sliding_set =
-      TLN_LoadSpriteset("Main Characters/Virtual Guy/Wall Jump (32x32).png");
-
-  idle_seq = TLN_CreateSpriteSequence("idle", idle_set, "idle", 3);
-  running_seq = TLN_CreateSpriteSequence("running", running_set, "running", 3);
-  double_jump_seq = TLN_CreateSpriteSequence("double_jump", double_jump_set,
-                                             "double_jump", 3);
-  sliding_seq = TLN_CreateSpriteSequence("sliding", sliding_set, "sliding", 3);
-}
-
-void init_player(int current_level, Player *player,
-                 const char *tmx_object_name) {
-  TLN_ObjectInfo obj = getObjectInfoByName(tmx_object_name);
-
-  init_animation();
-  TLN_SetSpriteSet(PLAYER_SPRITES, idle_set);
-  player->x = obj.x;
-  player->y = obj.y;
-  TLN_SetSpriteWorldPosition(PLAYER_SPRITES, player->x, player->y);
-  TLN_SetSpriteAnimation(PLAYER_SPRITES, idle_seq, 0);
-  show_state = SHOW_IDLE;
-  int player_layer = get_object_layer(tmx_object_name);
-  if (player_layer >= 0) {
-    TLN_ObjectList objects = TLN_GetLayerObjects(player_layer);
-    for (TLN_Object *item = objects->list; item; item = item->next) {
-      if (item->id == obj.id) {
-        item->visible = false;
-        break;
-      }
-    }
-  }
-  player->facing_right = true;
-  player->state = IDLE;
-  player->velocity_y = 0.0f;
-  player->grounded = true;
-  player->touching_wall = false;
-  player->double_jumping = false;
-  player->jump_was_down = false;
-  player->hitbox_offset =
-      load_object_hitbox(get_level_file_name(current_level), tmx_object_name);
-}
-
-static HitBox get_player_hitbox(const Player *player) {
-  return (HitBox){
-      .x = player->x + player->hitbox_offset.x_offset,
-      .y = player->y + player->hitbox_offset.y_offset,
-      .w = player->hitbox_offset.w,
-      .h = player->hitbox_offset.h,
-  };
+// 由glib自动调用
+static void player_init(Player *self) {
+  self->facing_right = true;
+  self->state = IDLE;
+  self->velocity_y = 0.0f;
+  self->grounded = true;
+  self->touching_wall = false;
+  self->double_jumping = false;
+  self->jump_was_down = false;
 }
 
 static PlayerInput read_player_input(Player *player) {
@@ -107,30 +82,70 @@ static PlayerInput read_player_input(Player *player) {
   return input;
 }
 
-static void update_player_contacts(Player *player) {
-  HitBox box = get_player_hitbox(player);
+static PlayerMotion advance_status(Player *player, const PlayerInput *input,
+                                   uint32_t elapsed) {
+  float dt = elapsed / 1000.0f;
+  PlayerMotion motion = {.dx = input->direction * MOVE_SPEED * dt};
+  if (input->direction != 0)
+    player->facing_right = input->direction > 0;
+
+  if (player->grounded) {      // 角色处于地面
+    if (input->jump_pressed) { // 地面上跳
+      player->state = JUMPING_OR_FALLING;
+      player->grounded = false;
+      player->velocity_y = -JUMP_SPEED;
+      motion.dy = player->velocity_y * dt + 0.5f * GRAVITY * dt * dt;
+      player->velocity_y += GRAVITY * dt;
+    } else { // 地面上水平移动
+      player->state = motion.dx != 0 ? RUNNING : IDLE;
+      player->velocity_y = 0;
+    }
+    player->double_jumping = false;
+  } else {                                                // 角色处于空中
+    if (input->jump_pressed && !player->double_jumping) { // 二段跳
+      player->double_jumping = true;
+      player->velocity_y = -JUMP_SPEED;
+    }
+
+    if (player->touching_wall && player->velocity_y > 0) { // 向下滑行中
+      player->state = SLIDING;
+      player->velocity_y = SLIDE_SPEED;
+      motion.dy = SLIDE_SPEED * dt;
+    } else {
+      player->state = JUMPING_OR_FALLING;
+      motion.dy = player->velocity_y * dt + 0.5f * GRAVITY * dt * dt;
+      player->velocity_y += GRAVITY * dt;
+    }
+  }
+  return motion;
+}
+
+static void player_pre_update(Sprite *sprite, uint32_t elapsed) {
+  Player *player = T_PLAYER(sprite);
+  SpriteData *data = get_sprite_data(sprite);
+  PlayerInput input = read_player_input(player);
+  // 通过输入和当前状态决定期望位移和切换到的状态
+  PlayerMotion motion = advance_status(player, &input, elapsed);
+  data->desired_dx = motion.dx;
+  data->desired_dy = motion.dy;
+}
+
+static void player_post_update(Sprite *sprite, uint32_t elapsed) {
+  Player *player = T_PLAYER(sprite);
+  SpriteData *data = get_sprite_data(sprite);
+  data->rect.x += data->resolved_dx;
+  data->rect.y += data->resolved_dy;
+  // 顶头后立即停止上升
+  if (data->desired_dy < 0 && fabsf(data->resolved_dy - data->desired_dy) >
+                                  0.0001f) // 浮点数有误差,不要精确判断
+    player->velocity_y = 0;
+  HitBox box = get_sprite_hitbox(sprite);
   player->grounded = is_player_grounded(player);
   player->touching_wall = is_touching_wall(box);
-}
-
-static void handle_player_actions(Player *player, const PlayerInput *input) {
   if (player->grounded) {
     player->velocity_y = 0;
     player->double_jumping = false;
-  }
-  if (!input->jump_pressed || (!player->grounded && player->double_jumping))
-    return;
-
-  player->double_jumping = !player->grounded;
-  player->grounded = false;
-  player->velocity_y = -JUMP_SPEED;
-}
-
-static void update_player_state(Player *player, const PlayerMotion *motion) {
-  if (player->grounded) {
-    player->state = motion->dx != 0 ? RUNNING : IDLE;
-    player->velocity_y = 0;
-    player->double_jumping = false;
+    player->state = data->desired_dx != 0 ? RUNNING : IDLE;
   } else if (player->touching_wall && player->velocity_y > 0) {
     player->state = SLIDING;
   } else {
@@ -138,41 +153,10 @@ static void update_player_state(Player *player, const PlayerMotion *motion) {
   }
 }
 
-static PlayerMotion calculate_player_motion(Player *player,
-                                            const PlayerInput *input,
-                                            uint32_t elapsed) {
-  float dt = elapsed / 1000.0f;
-  PlayerMotion motion = {.dx = input->direction * MOVE_SPEED * dt};
-  if (input->direction != 0)
-    player->facing_right = input->direction > 0;
-
-  if (player->grounded)
-    return motion;
-
-  if (player->touching_wall && player->velocity_y > 0) {
-    motion.dy = SLIDE_SPEED * dt;
-  } else {
-    motion.dy = player->velocity_y * dt + 0.5f * GRAVITY * dt * dt;
-    player->velocity_y += GRAVITY * dt;
-  }
-  return motion;
-}
-
-static void apply_player_motion(Player *player, PlayerMotion *motion) {
-  HitBox box = get_player_hitbox(player);
-  HitBox result = handle_maps_collision(box, motion->dx, motion->dy);
-  result = handle_traps_collision(box, result.x - box.x, result.y - box.y);
-  if (motion->dy < 0 && result.y != box.y + motion->dy)
-    player->velocity_y = 0;
-
-  player->x = result.x - player->hitbox_offset.x_offset;
-  player->y = result.y - player->hitbox_offset.y_offset;
-  motion->dx = result.x - box.x;
-  motion->dy = result.y - box.y;
-  update_player_contacts(player);
-}
-
-static void update_player_animation(Player *player) {
+static void player_render(Sprite *sprite, uint32_t elapsed) {
+  Player *player = T_PLAYER(sprite);
+  SpriteData *data = get_sprite_data(sprite);
+  TLN_SetSpriteWorldPosition(data->sprite_index, data->rect.x, data->rect.y);
   TLN_Spriteset spriteset = idle_set;
   TLN_Sequence sequence = idle_seq;
   ShowState next_show = SHOW_IDLE;
@@ -203,27 +187,59 @@ static void update_player_animation(Player *player) {
     break;
   }
 
-  TLN_SetSpriteFlags(PLAYER_SPRITES, player->facing_right ? 0 : FLAG_FLIPX);
-  if (show_state == next_show)
+  TLN_SetSpriteFlags(data->sprite_index, player->facing_right ? 0 : FLAG_FLIPX);
+  if (player->show_state == next_show)
     return;
-  TLN_SetSpriteSet(PLAYER_SPRITES, spriteset);
+  TLN_SetSpriteSet(data->sprite_index, spriteset);
   if (sequence)
-    TLN_SetSpriteAnimation(PLAYER_SPRITES, sequence, 0);
+    TLN_SetSpriteAnimation(data->sprite_index, sequence, 0);
   else
-    TLN_DisableSpriteAnimation(PLAYER_SPRITES);
-  show_state = next_show;
+    TLN_DisableSpriteAnimation(data->sprite_index);
+  player->show_state = next_show;
 }
 
-void update_player(Player *player, uint32_t elapsed) {
-  PlayerInput input = read_player_input(player);
-  update_player_contacts(player);
-  handle_player_actions(player, &input);
-  PlayerMotion motion = calculate_player_motion(player, &input, elapsed);
-  apply_player_motion(player, &motion);
-  update_player_state(player, &motion);
+static void player_class_init(PlayerClass *klass) {
+  SpriteClass *sprite_class = T_SPRITE_CLASS(klass);
+
+  sprite_class->sprite_pre_update = player_pre_update;
+  sprite_class->sprite_post_update = player_post_update;
+  sprite_class->sprite_render = player_render;
 }
 
-void render_player(Player *player, uint32_t frame) {
-  update_player_animation(player);
-  TLN_SetSpriteWorldPosition(PLAYER_SPRITES, player->x, player->y);
+static void init_animation() {
+  idle_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Idle (32x32).png");
+  running_set =
+      TLN_LoadSpriteset("Main Characters/Virtual Guy/Run (32x32).png");
+  jump_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Jump (32x32).png");
+  double_jump_set =
+      TLN_LoadSpriteset("Main Characters/Virtual Guy/Double Jump (32x32).png");
+  sliding_set =
+      TLN_LoadSpriteset("Main Characters/Virtual Guy/Wall Jump (32x32).png");
+
+  idle_seq = TLN_CreateSpriteSequence("idle", idle_set, "idle", 3);
+  running_seq = TLN_CreateSpriteSequence("running", running_set, "running", 3);
+  double_jump_seq = TLN_CreateSpriteSequence("double_jump", double_jump_set,
+                                             "double_jump", 3);
+  sliding_seq = TLN_CreateSpriteSequence("sliding", sliding_set, "sliding", 3);
+}
+
+Player *player_new(TLN_Object *obj) {
+
+  init_animation();
+  Player *player = T_PLAYER(g_object_new(T_TYPE_PLAYER, NULL));
+
+  spritelize(T_SPRITE(player), obj, idle_set, idle_seq);
+
+  SpriteData *data = get_sprite_data(T_SPRITE(player));
+  data->hitbox_offset =
+      (CollisionOffset){.x_offset = 5, .y_offset = 4, .w = 22, .h = 28};
+  player->grounded = is_player_grounded(player);
+  player->touching_wall = is_touching_wall(get_sprite_hitbox(T_SPRITE(player)));
+  player->state = player->grounded ? IDLE : JUMPING_OR_FALLING;
+  return player;
+}
+
+float player_get_velocity_y(Player *self) {
+  g_return_val_if_fail(T_IS_PLAYER(self), 0.0f);
+  return self->velocity_y;
 }

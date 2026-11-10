@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="24" nextobjectid="129">
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="16" tilewidth="16" tileheight="16" infinite="0" nextlayerid="24" nextobjectid="129">
  <tileset firstgid="1" source="Terrain.tsx"/>
  <tileset firstgid="243" source="player.tsx"/>
  <tileset firstgid="244" source="fruits.tsx"/>
@@ -8,14 +8,15 @@
  <tileset firstgid="286" source="cherry.tsx"/>
  <tileset firstgid="303" source="pineapple.tsx"/>
  <tileset firstgid="320" source="number.tsx"/>
- <imagelayer id="5" name="background" repeatx="1" repeaty="1">
+ <imagelayer id="5" name="background" offsetx="0" offsety="16" repeatx="1" repeaty="1">
   <image source="Background/Purple.png" width="64" height="64"/>
  </imagelayer>
- <layer id="1" name="maps" class="maps" width="35" height="15">
+ <layer id="1" name="maps" class="maps" width="35" height="16">
   <data encoding="csv">
-129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,129,
-129,36,37,35,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
-129,58,59,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
+129,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,107,129,
+129,36,37,35,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,129,
+129,58,59,35,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
+129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
 129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
 129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
 129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,35,35,16,35,0,0,0,0,0,0,0,38,129,
@@ -24,7 +25,7 @@
 129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2147483690,2147483689,2147483688,38,129,
 129,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,38,129,
 129,40,41,42,0,0,0,0,0,0,0,0,0,7,8,8,8,8,8,8,8,9,0,0,0,0,0,0,0,0,0,0,0,60,130,
-129,0,0,0,0,0,0,0,0,0,0,0,0,29,30,30,30,30,30,30,30,31,0,0,0,0,0,0,0,7,8,8,8,9,16,
+129,0,0,0,0,0,0,0,0,0,0,0,0,29,30,30,30,30,30,30,30,31,0,0,0,0,0,0,0,7,8,8,8,8,16,
 129,0,0,0,0,0,0,0,0,0,0,0,7,33,30,30,30,30,30,30,30,30,7,8,8,9,0,0,0,29,30,30,30,30,38,
 129,0,0,0,0,0,0,0,0,7,8,8,8,8,33,11,30,30,30,30,30,30,30,30,30,7,8,8,8,8,9,30,30,30,60,
 151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,151,129
@@ -32,29 +33,29 @@
  </layer>
  <group id="19" name="fruits">
   <objectgroup id="20" name="fruits">
-   <object id="98" gid="252" x="363.556" y="57.8286" width="32" height="32"/>
-   <object id="99" gid="252" x="341.867" y="81.0667" width="32" height="32"/>
-   <object id="109" gid="252" x="382.921" y="81" width="32" height="32"/>
-   <object id="112" gid="269" x="112.873" y="52.4064" width="32" height="32"/>
-   <object id="113" gid="269" x="93.9938" y="73" width="32" height="32"/>
-   <object id="114" gid="269" x="128.851" y="73" width="32" height="32"/>
-   <object id="115" gid="269" x="83.1493" y="95" width="32" height="32"/>
-   <object id="116" gid="269" x="112.873" y="95.7842" width="32" height="32"/>
-   <object id="117" gid="269" x="139.695" y="95" width="32" height="32"/>
-   <object id="120" gid="286" x="46" y="215" width="32" height="32"/>
-   <object id="121" gid="286" x="75.4033" y="215" width="32" height="32"/>
-   <object id="122" gid="286" x="104.486" y="215" width="32" height="32"/>
-   <object id="123" gid="303" x="487.493" y="63.2508" width="32" height="32"/>
-   <object id="124" gid="303" x="487.493" y="91.67" width="32" height="32"/>
-   <object id="125" gid="303" x="487.493" y="119.556" width="32" height="32"/>
+   <object id="98" gid="252" x="363.556" y="73.8286" width="32" height="32"/>
+   <object id="99" gid="252" x="341.867" y="97.0667" width="32" height="32"/>
+   <object id="109" gid="252" x="382.921" y="97" width="32" height="32"/>
+   <object id="112" gid="269" x="112.873" y="68.4064" width="32" height="32"/>
+   <object id="113" gid="269" x="93.9938" y="89" width="32" height="32"/>
+   <object id="114" gid="269" x="128.851" y="89" width="32" height="32"/>
+   <object id="115" gid="269" x="83.1493" y="111" width="32" height="32"/>
+   <object id="116" gid="269" x="112.873" y="111.784" width="32" height="32"/>
+   <object id="117" gid="269" x="139.695" y="111" width="32" height="32"/>
+   <object id="120" gid="286" x="46" y="231" width="32" height="32"/>
+   <object id="121" gid="286" x="75.4033" y="231" width="32" height="32"/>
+   <object id="122" gid="286" x="104.486" y="231" width="32" height="32"/>
+   <object id="123" gid="303" x="487.493" y="79.2508" width="32" height="32"/>
+   <object id="124" gid="303" x="487.493" y="107.67" width="32" height="32"/>
+   <object id="125" gid="303" x="487.493" y="135.556" width="32" height="32"/>
   </objectgroup>
  </group>
  <group id="17" name="player">
   <objectgroup id="18" name="player">
-   <object id="72" name="virtual_guy" gid="243" x="246.602" y="160" width="32" height="32"/>
+   <object id="72" name="virtual_guy" gid="243" x="246.602" y="176" width="32" height="32"/>
   </objectgroup>
  </group>
  <objectgroup id="23" name="other">
-  <object id="128" gid="320" x="270.146" y="207.966" width="19" height="17"/>
+  <object id="128" gid="320" x="270.146" y="223.966" width="19" height="17"/>
  </objectgroup>
 </map>

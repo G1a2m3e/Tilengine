@@ -5,10 +5,11 @@ add_executable(my_jump_adventure
     MyJumpAdventure.c
     player.c
     utils.c
+    sprite.c
     game.c
-    collision_handler.c
     fruit.c
     traps.c
+    collision_handler.c
     falling_platform.c
     env_interaction.c
     )

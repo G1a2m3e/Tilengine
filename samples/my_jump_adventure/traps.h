@@ -3,7 +3,7 @@
 
 #include "../../src/ObjectList.h"
 #include "collision_handler.h"
-#include "player.h"
+#include "sprite.h"
 #include <glib-object.h>
 #include <stdint.h>
 
@@ -17,20 +17,14 @@ typedef enum {
 
 #define T_TYPE_TRAP (t_trap_get_type())
 
-G_DECLARE_DERIVABLE_TYPE(TTrap, t_trap, T, TRAP, GObject)
+G_DECLARE_DERIVABLE_TYPE(TTrap, t_trap, T, TRAP, Sprite)
 
 struct _TTrapClass {
-  GObjectClass parent_class;
-  // 虚函数，允许子类重写
-  void (*update)(TTrap *self, Player *player, uint32_t elapsed);
-  void (*render)(TTrap *self, Player *player, uint32_t elapsed);
+  SpriteClass parent_class;
 };
 
 typedef struct {
-  HitBox hitbox;
   HitBox previous_hitbox;
-  int sprite_index;
-  gboolean active;
 } TTrapData;
 
 typedef struct {
@@ -41,9 +35,6 @@ typedef struct {
 void t_trap_factory_init(void);
 TTrap *t_trap_obtain(int type, TLN_Object *obj);
 TTrapData *t_trap_get_data(TTrap *self);
-void t_trap_update(TTrap *self, Player *player, uint32_t elapsed);
-void t_trap_render(TTrap *self, Player *player, uint32_t elapsed);
-void t_trap_deactivate(TTrap *self);
 
 G_END_DECLS
 #endif

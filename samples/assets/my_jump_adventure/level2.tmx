@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="31">
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="16" tilewidth="16" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="31">
  <tileset firstgid="1" source="Terrain.tsx"/>
  <tileset firstgid="243" source="player.tsx"/>
  <tileset firstgid="244" source="cherry.tsx"/>
@@ -11,12 +11,13 @@
  <tileset firstgid="379" source="kiwi.tsx"/>
  <tileset firstgid="396" source="melon.tsx"/>
  <tileset firstgid="413" source="falling_platform.tsx"/>
- <imagelayer id="2" name="background" repeatx="1" repeaty="1">
+ <imagelayer id="2" name="background" offsetx="0" offsety="16" repeatx="1" repeaty="1">
   <image source="Background/Yellow.png" width="64" height="64"/>
  </imagelayer>
- <layer id="1" name="图块层 1" class="maps" width="35" height="15">
+ <layer id="1" name="图块层 1" class="maps" width="35" height="16">
   <data encoding="csv">
-91,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,23,
+92,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,2147483740,
+113,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,23,
 113,36,37,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,23,
 113,58,59,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,23,
 113,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,23,
@@ -35,31 +36,31 @@
  </layer>
  <group id="3" name="player">
   <objectgroup id="5" name="player">
-   <object id="1" name="virtual_guy" gid="243" x="30.6663" y="127.667" width="32" height="32"/>
+   <object id="1" name="virtual_guy" gid="243" x="30.6663" y="143.667" width="32" height="32"/>
   </objectgroup>
  </group>
  <group id="4" name="fruits">
   <objectgroup id="6" name="fruits">
-   <object id="8" gid="244" x="130" y="60" width="32" height="32"/>
-   <object id="9" gid="278" x="100.667" y="90" width="32" height="32"/>
-   <object id="12" gid="345" x="148" y="90" width="32" height="32"/>
-   <object id="13" gid="362" x="181" y="60" width="32" height="32"/>
-   <object id="14" gid="261" x="197" y="90" width="32" height="32"/>
-   <object id="15" gid="379" x="231" y="60" width="32" height="32"/>
-   <object id="16" gid="396" x="243.333" y="90" width="32" height="32"/>
-   <object id="17" gid="362" x="286" y="60" width="32" height="32"/>
-   <object id="18" gid="278" x="294" y="90" width="32" height="32"/>
-   <object id="19" gid="244" x="335.333" y="60" width="32" height="32"/>
-   <object id="20" gid="396" x="348" y="90" width="32" height="32"/>
-   <object id="21" gid="345" x="398.667" y="90.6667" width="32" height="32"/>
-   <object id="22" gid="261" x="385.333" y="60" width="32" height="32"/>
+   <object id="8" gid="244" x="130" y="76" width="32" height="32"/>
+   <object id="9" gid="278" x="100.667" y="106" width="32" height="32"/>
+   <object id="12" gid="345" x="148" y="106" width="32" height="32"/>
+   <object id="13" gid="362" x="181" y="76" width="32" height="32"/>
+   <object id="14" gid="261" x="197" y="106" width="32" height="32"/>
+   <object id="15" gid="379" x="231" y="76" width="32" height="32"/>
+   <object id="16" gid="396" x="243.333" y="106" width="32" height="32"/>
+   <object id="17" gid="362" x="286" y="76" width="32" height="32"/>
+   <object id="18" gid="278" x="294" y="106" width="32" height="32"/>
+   <object id="19" gid="244" x="335.333" y="76" width="32" height="32"/>
+   <object id="20" gid="396" x="348" y="106" width="32" height="32"/>
+   <object id="21" gid="345" x="398.667" y="106.667" width="32" height="32"/>
+   <object id="22" gid="261" x="385.333" y="76" width="32" height="32"/>
   </objectgroup>
  </group>
  <objectgroup id="8" name="other">
-  <object id="11" name="02" gid="296" x="272" y="240" width="19" height="17"/>
-  <object id="23" type="100" gid="413" x="130" y="128.333" width="32" height="10"/>
-  <object id="27" type="100" gid="413" x="192.667" y="144.333" width="32" height="10"/>
-  <object id="28" type="100" gid="413" x="267.333" y="123" width="32" height="10"/>
-  <object id="29" type="100" gid="413" x="357.333" y="137" width="32" height="10"/>
+  <object id="11" name="02" gid="296" x="272" y="256" width="19" height="17"/>
+  <object id="23" type="100" gid="413" x="130" y="144.333" width="32" height="10"/>
+  <object id="27" type="100" gid="413" x="192.667" y="160.333" width="32" height="10"/>
+  <object id="28" type="100" gid="413" x="267.333" y="139" width="32" height="10"/>
+  <object id="29" type="100" gid="413" x="357.333" y="153" width="32" height="10"/>
  </objectgroup>
 </map>

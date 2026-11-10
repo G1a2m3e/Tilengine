@@ -3,16 +3,8 @@
 #include "falling_platform.h"
 #include <math.h>
 
-G_DEFINE_TYPE_WITH_PRIVATE(TTrap, t_trap, G_TYPE_OBJECT)
+G_DEFINE_TYPE_WITH_PRIVATE(TTrap, t_trap, T_TYPE_SPRITE)
 
-static void t_trap_finalize(GObject *object) {
-  t_trap_deactivate(T_TRAP(object));
-  G_OBJECT_CLASS(t_trap_parent_class)->finalize(object);
-}
-
-static void t_trap_class_init(TTrapClass *klass) {
-  G_OBJECT_CLASS(klass)->finalize = t_trap_finalize;
-}
 static GHashTable *trap_types = NULL;
 static GHashTable *trap_animation = NULL;
 typedef struct {
@@ -22,16 +14,20 @@ typedef struct {
   TLN_Sequence sequence;
 } TrapAnimation;
 
+static void t_trap_finalize(GObject *object) {
+  G_OBJECT_CLASS(t_trap_parent_class)->finalize(object);
+}
+
+static void t_trap_class_init(TTrapClass *klass) {
+  G_OBJECT_CLASS(klass)->finalize = t_trap_finalize;
+}
+
 static TrapAnimation falling_animation = {
     .file = "Traps/Falling Platforms/On (32x10).png",
     .prefix = "on",
 };
 
-static void t_trap_init(TTrap *self) {
-  TTrapPrivate *priv = t_trap_get_instance_private(self);
-  priv->data.sprite_index = -1;
-  priv->data.active = TRUE;
-}
+static void t_trap_init(TTrap *self) {}
 
 void t_trap_factory_init(void) {
   if (trap_types)
@@ -45,41 +41,6 @@ void t_trap_factory_init(void) {
                       &falling_animation);
 }
 
-void t_trap_update(TTrap *self, Player *player, uint32_t elapsed) {
-  g_return_if_fail(T_IS_TRAP(self));
-
-  TTrapData *data = t_trap_get_data(self);
-  if (!data->active)
-    return;
-  data->previous_hitbox = data->hitbox;
-  TTrapClass *klass = T_TRAP_GET_CLASS(self);
-
-  if (klass->update)
-    klass->update(self, player, elapsed);
-}
-
-void t_trap_render(TTrap *self, Player *player, uint32_t elapsed) {
-  g_return_if_fail(T_IS_TRAP(self));
-  if (!t_trap_get_data(self)->active)
-    return;
-
-  TTrapClass *klass = T_TRAP_GET_CLASS(self);
-
-  if (klass->render)
-    klass->render(self, player, elapsed);
-}
-
-void t_trap_deactivate(TTrap *self) {
-  g_return_if_fail(T_IS_TRAP(self));
-  TTrapData *data = t_trap_get_data(self);
-  data->active = FALSE;
-  if (data->sprite_index >= 0) {
-    TLN_DisableSpriteAnimation(data->sprite_index);
-    TLN_DisableSprite(data->sprite_index);
-    data->sprite_index = -1;
-  }
-}
-
 TTrapData *t_trap_get_data(TTrap *self) {
   g_return_val_if_fail(T_IS_TRAP(self), NULL);
 
@@ -88,51 +49,21 @@ TTrapData *t_trap_get_data(TTrap *self) {
 }
 
 TTrap *t_trap_obtain(int type, TLN_Object *obj) {
-  if (trap_types == NULL || type < FIRST_TRAP_TYPE || type >= LAST_TRAP_TYPE)
-    return NULL;
-
   GType gtype = (GType)GPOINTER_TO_SIZE(
       g_hash_table_lookup(trap_types, GINT_TO_POINTER(type)));
-
-  if (gtype == G_TYPE_INVALID)
-    return NULL;
-  TTrap *trap = T_TRAP(g_object_new(gtype, NULL));
-  TTrapPrivate *priv = t_trap_get_instance_private(trap);
-  HitBox hb = {.x = obj->x,
-               .y = obj->y,
-               .w = obj->width,
-               .h = obj->height,
-               .push_weight = INFINITY};
-  priv->data.hitbox = hb;
-  priv->data.previous_hitbox = hb;
-
-  TrapAnimation *animation =
+  TrapAnimation *anim =
       g_hash_table_lookup(trap_animation, GINT_TO_POINTER(type));
-  if (!animation)
-    goto failed;
-  if (!animation->set)
-    animation->set = TLN_LoadSpriteset(animation->file);
-  if (!animation->set)
-    goto failed;
-  if (!animation->sequence)
-    animation->sequence = TLN_CreateSpriteSequence(
-        animation->prefix, animation->set, animation->prefix, 3);
-  if (!animation->sequence)
-    goto failed;
+  anim->set = TLN_LoadSpriteset(anim->file);
+  anim->sequence =
+      TLN_CreateSpriteSequence(anim->prefix, anim->set, anim->prefix, 3);
 
-  priv->data.sprite_index = TLN_GetAvailableSprite();
-  if (priv->data.sprite_index < 0)
-    goto failed;
-  if (!TLN_SetSpriteSet(priv->data.sprite_index, animation->set) ||
-      !TLN_SetSpriteFlags(priv->data.sprite_index, obj->flags) ||
-      !TLN_SetSpriteWorldPosition(priv->data.sprite_index, obj->x, obj->y) ||
-      !TLN_SetSpriteAnimation(priv->data.sprite_index, animation->sequence, 0))
-    goto failed;
+  TTrap *trap = g_object_new(gtype, NULL);
+  Sprite *sprite = T_SPRITE(trap);
+  spritelize(sprite, obj, anim->set, anim->sequence);
+  SpriteData *data = get_sprite_data(sprite);
 
-  obj->visible = false;
+  data->hitbox_offset = (CollisionOffset){0, 0, obj->width, obj->height};
+  data->push_weight = INFINITY;
+  t_trap_get_data(trap)->previous_hitbox = get_sprite_hitbox(sprite);
   return trap;
-
-failed:
-  g_object_unref(trap);
-  return NULL;
 }
