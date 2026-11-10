@@ -140,7 +140,7 @@ static void player_post_update(Sprite *sprite, uint32_t elapsed) {
                                   0.0001f) // 浮点数有误差,不要精确判断
     player->velocity_y = 0;
   HitBox box = get_sprite_hitbox(sprite);
-  player->grounded = is_player_grounded(player);
+  player->grounded = is_player_grounded();
   player->touching_wall = is_touching_wall(box);
   if (player->grounded) {
     player->velocity_y = 0;
@@ -207,20 +207,25 @@ static void player_class_init(PlayerClass *klass) {
 }
 
 static void init_animation() {
-  idle_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Idle (32x32).png");
-  running_set =
-      TLN_LoadSpriteset("Main Characters/Virtual Guy/Run (32x32).png");
-  jump_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Jump (32x32).png");
-  double_jump_set =
-      TLN_LoadSpriteset("Main Characters/Virtual Guy/Double Jump (32x32).png");
-  sliding_set =
-      TLN_LoadSpriteset("Main Characters/Virtual Guy/Wall Jump (32x32).png");
+  if (!idle_set)
+    idle_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Idle (32x32).png");
+  if (!running_set)
+    running_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Run (32x32).png");
+  if (!jump_set)
+    jump_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Jump (32x32).png");
+  if (!double_jump_set)
+    double_jump_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Double Jump (32x32).png");
+  if (!sliding_set)
+    sliding_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Wall Jump (32x32).png");
 
-  idle_seq = TLN_CreateSpriteSequence("idle", idle_set, "idle", 3);
-  running_seq = TLN_CreateSpriteSequence("running", running_set, "running", 3);
-  double_jump_seq = TLN_CreateSpriteSequence("double_jump", double_jump_set,
-                                             "double_jump", 3);
-  sliding_seq = TLN_CreateSpriteSequence("sliding", sliding_set, "sliding", 3);
+  if (!idle_seq)
+    idle_seq = TLN_CreateSpriteSequence("idle", idle_set, "idle", 3);
+  if (!running_seq)
+    running_seq = TLN_CreateSpriteSequence("running", running_set, "running", 3);
+  if (!double_jump_seq)
+    double_jump_seq = TLN_CreateSpriteSequence("double_jump", double_jump_set, "double_jump", 3);
+  if (!sliding_seq)
+    sliding_seq = TLN_CreateSpriteSequence("sliding", sliding_set, "sliding", 3);
 }
 
 Player *player_new(TLN_Object *obj) {
@@ -233,9 +238,6 @@ Player *player_new(TLN_Object *obj) {
   SpriteData *data = get_sprite_data(T_SPRITE(player));
   data->hitbox_offset =
       (CollisionOffset){.x_offset = 5, .y_offset = 4, .w = 22, .h = 28};
-  player->grounded = is_player_grounded(player);
-  player->touching_wall = is_touching_wall(get_sprite_hitbox(T_SPRITE(player)));
-  player->state = player->grounded ? IDLE : JUMPING_OR_FALLING;
   return player;
 }
 

@@ -1,7 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "player.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -14,5 +13,4 @@ extern void init_game(int current_level, LevelInfo level_info);
 extern void reset_game_timer(void);
 extern bool update(uint32_t frame);
 extern void render(uint32_t frame);
-extern bool is_player_grounded(Player *player);
 #endif

@@ -15,6 +15,7 @@ typedef struct {
 } TrapAnimation;
 
 static void t_trap_finalize(GObject *object) {
+  deactive_sprite(T_SPRITE(object));
   G_OBJECT_CLASS(t_trap_parent_class)->finalize(object);
 }
 
@@ -53,9 +54,10 @@ TTrap *t_trap_obtain(int type, TLN_Object *obj) {
       g_hash_table_lookup(trap_types, GINT_TO_POINTER(type)));
   TrapAnimation *anim =
       g_hash_table_lookup(trap_animation, GINT_TO_POINTER(type));
-  anim->set = TLN_LoadSpriteset(anim->file);
-  anim->sequence =
-      TLN_CreateSpriteSequence(anim->prefix, anim->set, anim->prefix, 3);
+  if (!anim->set)
+    anim->set = TLN_LoadSpriteset(anim->file);
+  if (!anim->sequence)
+    anim->sequence = TLN_CreateSpriteSequence(anim->prefix, anim->set, anim->prefix, 3);
 
   TTrap *trap = g_object_new(gtype, NULL);
   Sprite *sprite = T_SPRITE(trap);

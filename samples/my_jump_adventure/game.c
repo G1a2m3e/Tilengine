@@ -6,16 +6,14 @@
 #include "collision_handler.h"
 #include "env_interaction.h"
 #include "fruit.h"
-#include "player.h"
+#include "falling_platform.h"
 #include "sprite.h"
-#include "traps.h"
 #include "utils.h"
 #include <glib.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
-static Player *player;
 static Fruit *fruits;
 static int fruit_count;
 static uint32_t last_update_ms;
@@ -39,7 +37,7 @@ static int clamp_camera(float position, int world_size, int screen_size) {
 }
 
 static void update_camera(void) {
-  SpriteData *data = get_sprite_data(T_SPRITE(player));
+  SpriteData *data = get_sprite_data(T_SPRITE(get_player()));
   float center_x = data->rect.x + data->hitbox_offset.x_offset +
                    data->hitbox_offset.w * 0.5f;
   float center_y = data->rect.y + data->hitbox_offset.y_offset +
@@ -104,24 +102,6 @@ void reset_game_timer(void) {
   last_render_ms = TLN_GetTicks();
 }
 
-static void init_player(const char *player_name) {
-  TLN_Object *player_obj = NULL;
-
-  for (int layer = 0; layer < TLN_GetNumLayers() && !player_obj; ++layer) {
-    TLN_ObjectList objects = TLN_GetLayerObjects(layer);
-    if (!objects)
-      continue;
-
-    for (TLN_Object *obj = objects->list; obj; obj = obj->next) {
-      if (strcmp(obj->name, player_name) == 0) {
-        player_obj = obj;
-        break;
-      }
-    }
-  }
-  player = player_new(player_obj);
-}
-
 void init_game(int current_level, LevelInfo level_info) {
   TMXInfo map = {0};
   world_width = TLN_GetWidth();
@@ -144,13 +124,13 @@ void init_game(int current_level, LevelInfo level_info) {
 
   init_player(level_info.player_name);
   init_fruits(level_info.fruits_objectgroup_name);
-  init_env_interaction();
+  init_traps();
   camera_initialized = false;
   update_camera();
 }
 
 static void check_fruit_collection(void) {
-  SpriteData *data = get_sprite_data(T_SPRITE(player));
+  SpriteData *data = get_sprite_data(T_SPRITE(get_player()));
   HitBox player_box = {.x = data->rect.x + data->hitbox_offset.x_offset,
                        .y = data->rect.y + data->hitbox_offset.y_offset,
                        .w = data->hitbox_offset.w,
@@ -164,21 +144,22 @@ static void check_fruit_collection(void) {
   }
 }
 
-static void update_traps(Player *player, uint32_t elapsed) {
+static void trap_pre_update(uint32_t elapsed) {
   GPtrArray *traps = get_traps_array();
-  for (guint i = 0; i < traps->len; ++i)
-    t_trap_update(g_ptr_array_index(traps, i), player, elapsed);
+  for (guint i = 0; i < traps->len; ++i) {
+    sprite_pre_update(g_ptr_array_index(traps, i), elapsed);
+  }
 }
 
-static void pre_update_trap(uint32_t elapsed) {}
-
-static void env_interaction(uint32_t elapsed) {
-  SpriteData *player_data = get_sprite_data(T_SPRITE(player));
-  HitBox player_hb = get_sprite_hitbox(T_SPRITE(player));
-  HitBox result = handle_maps_collision(player_hb, player_data->desired_dx,
-                                        player_data->desired_dy);
-  player_data->resolved_dx = result.x - player_hb.x;
-  player_data->resolved_dy = result.y - player_hb.y;
+static void trap_post_update(uint32_t elapsed) {
+  GPtrArray *traps = get_traps_array();
+  for (guint i = 0; i < traps->len; ++i) {
+    Sprite *sprite = T_SPRITE(g_ptr_array_index(traps, i));
+    sprite_post_update(sprite, elapsed);
+    if (get_sprite_data(sprite)->active && T_IS_FALLING_PLATFORM(sprite) &&
+        t_falling_platform_is_offscreen(T_FALLING_PLATFORM(sprite), world_height))
+      deactive_sprite(sprite);
+  }
 }
 
 static void post_update_trap(uint32_t elapsed) {}
@@ -217,13 +198,13 @@ bool update(uint32_t frame) {
   uint32_t elapsed = now - last_update_ms;
   last_update_ms = now;
 
-  sprite_pre_update(T_SPRITE(player), elapsed);
-  pre_update_trap(elapsed);
+  sprite_pre_update(T_SPRITE(get_player()), elapsed);
+  trap_pre_update(elapsed);
 
-  env_interaction(elapsed);
+  update_env_interaction(elapsed);
 
-  sprite_post_update(T_SPRITE(player), elapsed);
-  post_update_trap(elapsed);
+  sprite_post_update(T_SPRITE(get_player()), elapsed);
+  trap_post_update(elapsed);
 
   if (finish_level()) {
     return false;
@@ -235,27 +216,17 @@ bool update(uint32_t frame) {
 }
 
 static void render_traps(uint32_t elapsed) {
-  // GPtrArray *traps = get_traps_array();
-  // for (guint i = 0; i < traps->len;) {
-  //   TTrap *trap = g_ptr_array_index(traps, i);
-  //   if (T_IS_FALLING_PLATFORM(trap) &&
-  //       t_falling_platform_is_offscreen(T_FALLING_PLATFORM(trap),
-  //                                       camera_y + TLN_GetHeight()))
-  //     t_trap_deactivate(trap);
-  //   if (!t_trap_get_data(trap)->active) {
-  //     g_ptr_array_remove_index(traps, i);
-  //     continue;
-  //   }
-  //   t_trap_render(trap, &player, elapsed);
-  //   ++i;
-  // }
+  GPtrArray *traps = get_traps_array();
+  for (guint i = 0; i < traps->len; ++i) {
+    sprite_render(g_ptr_array_index(traps, i), elapsed);
+  }
 }
 
 void render(uint32_t frame) {
   uint32_t now = TLN_GetTicks();
   uint32_t elapsed = now - last_render_ms;
   last_render_ms = now;
-  sprite_render(T_SPRITE(player), elapsed);
+  sprite_render(T_SPRITE(get_player()), elapsed);
   render_traps(elapsed);
   update_camera();
 }

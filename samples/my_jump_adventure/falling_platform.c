@@ -81,7 +81,6 @@ static void t_falling_platform_pre_update(Sprite *sprite, uint32_t elapsed) {
 }
 
 static void t_falling_platform_post_update(Sprite *sprite, uint32_t elapsed) {
-  // 平台目前直接在 pre_update 中更新位置。
 }
 
 static void t_falling_platform_render(Sprite *sprite, uint32_t elapsed) {
