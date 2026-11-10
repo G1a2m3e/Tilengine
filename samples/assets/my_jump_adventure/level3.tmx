@@ -1,38 +1,98 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="3">
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="16" tilewidth="16" tileheight="16" infinite="0" nextlayerid="11" nextobjectid="77">
  <tileset firstgid="1" source="Terrain.tsx"/>
  <tileset firstgid="243" source="player.tsx"/>
  <tileset firstgid="244" source="kiwi.tsx"/>
- <imagelayer id="2" name="background" repeatx="1" repeaty="1">
+ <tileset firstgid="261" source="melon.tsx"/>
+ <tileset firstgid="278" source="pineapple.tsx"/>
+ <tileset firstgid="295" source="cherry.tsx"/>
+ <tileset firstgid="312" source="orange.tsx"/>
+ <tileset firstgid="329" source="apple.tsx"/>
+ <tileset firstgid="346" source="banna.tsx"/>
+ <tileset firstgid="363" source="chain.tsx"/>
+ <tileset firstgid="364" source="saw.tsx"/>
+ <imagelayer id="2" name="background" offsetx="0" offsety="16" repeatx="1" repeaty="1">
   <image source="Background/Green.png" width="64" height="64"/>
  </imagelayer>
- <layer id="1" name="xax" class="maps" width="35" height="15">
+ <group id="7" name="traps">
+  <group id="9" name="chains">
+   <objectgroup id="10" name="chains">
+    <object id="52" gid="363" x="494" y="121" width="8" height="8"/>
+    <object id="53" gid="363" x="502" y="121" width="8" height="8"/>
+    <object id="54" gid="363" x="510" y="121" width="8" height="8"/>
+    <object id="55" gid="363" x="518" y="121" width="8" height="8"/>
+    <object id="56" gid="363" x="526" y="121" width="8" height="8"/>
+    <object id="57" gid="363" x="534" y="121" width="8" height="8"/>
+    <object id="59" gid="363" x="542" y="121" width="8" height="8"/>
+    <object id="69" gid="363" x="405" y="33" width="8" height="8"/>
+    <object id="70" gid="363" x="405" y="27" width="8" height="8"/>
+    <object id="72" gid="363" x="406" y="87.3333" width="8" height="8"/>
+    <object id="24" gid="363" x="405" y="99.3333" width="8" height="8"/>
+    <object id="25" gid="363" x="405" y="93.5" width="8" height="8"/>
+    <object id="26" gid="363" x="405" y="87.5" width="8" height="8"/>
+    <object id="27" gid="363" x="405" y="81" width="8" height="8"/>
+    <object id="28" gid="363" x="405" y="75" width="8" height="8"/>
+    <object id="29" gid="363" x="405" y="69" width="8" height="8"/>
+    <object id="30" gid="363" x="405" y="63" width="8" height="8"/>
+    <object id="31" gid="363" x="405" y="57" width="8" height="8"/>
+    <object id="32" gid="363" x="405" y="51" width="8" height="8"/>
+    <object id="33" gid="363" x="405" y="45" width="8" height="8"/>
+    <object id="34" gid="363" x="405" y="39" width="8" height="8"/>
+    <object id="35" gid="363" x="446" y="121" width="8" height="8"/>
+    <object id="47" gid="363" x="454" y="121" width="8" height="8"/>
+    <object id="48" gid="363" x="462" y="121" width="8" height="8"/>
+    <object id="49" gid="363" x="470" y="121" width="8" height="8"/>
+    <object id="50" gid="363" x="478" y="121" width="8" height="8"/>
+    <object id="51" gid="363" x="486" y="121" width="8" height="8"/>
+   </objectgroup>
+  </group>
+  <objectgroup id="8" name="saws">
+   <object id="68" name="saw1" gid="364" x="389.667" y="106.333" width="38" height="38"/>
+   <object id="67" name="saw2" gid="364" x="430.333" y="135.667" width="38" height="38"/>
+  </objectgroup>
+ </group>
+ <layer id="1" name="maps" class="maps" width="35" height="16">
   <data encoding="csv">
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,8,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,7,7,7,7,7,7,8,9,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,7,7,8,9,0,0,0,0,0,0,7,7,7,7,7,7,7,8,9,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+4,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,134,1073741939,
+25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,111,
+25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,14,15,111,
+25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,35,111,
+25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,111,
+25,40,41,42,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,111,
+25,0,0,0,0,0,95,96,96,96,96,96,96,97,0,0,0,0,0,0,0,0,0,7,8,8,8,9,0,0,0,0,0,0,111,
+25,0,0,0,0,0,117,118,118,118,118,118,118,119,0,0,0,0,0,0,0,0,0,117,118,118,118,119,0,0,0,0,0,0,111,
+25,40,42,0,0,0,117,118,118,118,118,118,118,119,0,0,0,0,0,0,0,13,14,15,118,118,118,119,0,0,0,0,0,0,111,
+25,0,0,0,0,0,139,140,140,140,140,140,140,141,0,0,0,0,0,0,0,0,35,7,8,9,118,119,0,0,0,0,0,0,111,
+25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,117,118,118,118,119,40,42,0,0,0,0,111,
+25,35,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,117,118,118,118,119,0,0,0,0,0,0,111,
+25,95,96,96,96,96,97,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,35,117,118,118,118,119,0,0,0,0,0,0,111,
+25,118,36,37,118,118,119,0,0,0,0,0,0,0,0,0,0,0,0,0,7,8,8,9,118,118,7,8,9,0,0,0,0,0,111,
+25,118,58,59,118,118,95,96,97,0,0,0,0,0,0,0,0,35,0,0,117,118,118,118,118,13,15,7,8,9,0,0,0,0,111,
+26,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
 </data>
  </layer>
  <group id="3" name="player">
   <objectgroup id="6" name="player">
-   <object id="1" name="virtual_guy" gid="243" x="258.692" y="70.9384" width="32" height="32"/>
+   <object id="1" name="virtual_guy" gid="243" x="42.0253" y="192" width="32" height="32"/>
   </objectgroup>
  </group>
  <group id="4" name="fruits">
   <objectgroup id="5" name="fruits">
-   <object id="2" gid="244" x="151.042" y="79.8473" width="32" height="32"/>
+   <object id="7" gid="278" x="466" y="203.333" width="32" height="32"/>
+   <object id="8" gid="278" x="498" y="222.667" width="32" height="32"/>
+   <object id="9" gid="295" x="502" y="190.667" width="32" height="32"/>
+   <object id="11" gid="261" x="504.667" y="158.667" width="32" height="32"/>
+   <object id="12" gid="312" x="287.333" y="232.667" width="32" height="32"/>
+   <object id="13" gid="329" x="226" y="140" width="32" height="32"/>
+   <object id="14" gid="329" x="225.333" y="174.667" width="32" height="32"/>
+   <object id="15" gid="346" x="98.6667" y="76" width="32" height="32"/>
+   <object id="16" gid="346" x="136.667" y="76" width="32" height="32"/>
+   <object id="17" gid="312" x="175.333" y="76" width="32" height="32"/>
+   <object id="18" gid="312" x="222" y="76" width="32" height="32"/>
+   <object id="19" gid="244" x="264" y="76" width="32" height="32"/>
+   <object id="20" gid="261" x="168" y="236" width="32" height="32"/>
+   <object id="21" gid="261" x="332.667" y="108" width="32" height="32"/>
+   <object id="22" gid="295" x="510.667" y="108.667" width="32" height="32"/>
   </objectgroup>
  </group>
 </map>

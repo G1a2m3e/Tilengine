@@ -201,7 +201,15 @@ TLN_Tilemap TLN_LoadTilemap (const char *filename, const char *layername)
 	/* load referenced tilesets */
 	TLN_Tileset tilesets[TMX_MAX_TILESET] = { 0 };
 	for (c = 0; c < tmxinfo.num_tilesets; c += 1)
+	{
 		tilesets[c] = load_tileset(&tmxinfo, filename, c);
+		if (tilesets[c] == NULL)
+		{
+			free(loader.data);
+			loader.data = NULL;
+			return NULL;
+		}
+	}
 
 	if (loader.data != NULL)
 	{

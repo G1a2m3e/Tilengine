@@ -331,11 +331,11 @@ static bool DrawTiledScanline(int nlayer, uint32_t* dstpixel, int nscan, int tx1
 	const TLN_Tilemap tilemap = layer->tilemap;
 	const TLN_Tileset tileset = tilemap->tilesets[0];
 	int xpos = (layer->hstart + x) % layer->width;
-	int xtile = xpos >> tileset->hshift;
+	int xtile = xpos / tileset->width;
 
 	scan.width = scan.stride = tileset->width;
 	scan.height = tileset->height;
-	scan.srcx = xpos & tileset->hmask;
+	scan.srcx = xpos % tileset->width;
 
 	/* fill whole scanline */
 	int column = x % tileset->width;
@@ -417,11 +417,11 @@ static bool DrawTiledScanlineScaling(int nlayer, uint32_t* dstpixel, int nscan, 
 	const TLN_Tilemap tilemap = layer->tilemap;
 	const TLN_Tileset tileset = tilemap->tilesets[0];
 	int xpos = (layer->hstart + fix2int(x*layer->dx)) % layer->width;
-	int xtile = xpos >> tileset->hshift;
+	int xtile = xpos / tileset->width;
 
 	scan.width = scan.stride = tileset->width;
 	scan.height = tileset->height;
-	scan.srcx = xpos & tileset->hmask;
+	scan.srcx = xpos % tileset->width;
 
 	/* fill whole scanline */
 	fix_t fix_x = int2fix(x);
@@ -539,10 +539,10 @@ static bool DrawTiledScanlineAffine(int nlayer, uint32_t* dstpixel, int nscan, i
 		xpos = abs((fix2int(x1) + layer->width)) % layer->width;
 		ypos = abs((fix2int(y1) + layer->height)) % layer->height;
 
-		int xtile = xpos >> tileset->hshift;
+		int xtile = xpos / tileset->width;
 		int ytile = ypos / tileset->height;
 
-		scan.srcx = xpos & tileset->hmask;
+		scan.srcx = xpos % tileset->width;
 		scan.srcy = ypos % tileset->height;
 		TLN_Tile tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 
@@ -595,10 +595,10 @@ static bool DrawTiledScanlinePixelMapping(int nlayer, uint32_t* dstpixel, int ns
 		int xpos = abs(hstart + pixel_map->dx) % layer->width;
 		int ypos = abs(vstart + pixel_map->dy) % layer->height;
 
-		int xtile = xpos >> tileset->hshift;
+		int xtile = xpos / tileset->width;
 		int ytile = ypos / tileset->height;
 
-		scan.srcx = xpos & tileset->hmask;
+		scan.srcx = xpos % tileset->width;
 		scan.srcy = ypos % tileset->height;
 		TLN_Tile tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 

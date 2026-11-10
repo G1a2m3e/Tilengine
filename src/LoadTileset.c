@@ -316,7 +316,9 @@ TLN_Tileset TLN_LoadTileset (const char* filename)
 		tileset = TLN_CreateTileset(tilecount, loader.tilewidth, loader.tileheight, TLN_ClonePalette(TLN_GetBitmapPalette(bitmap)), loader.sp, loader.attributes);
 		if (tileset == NULL)
 		{
-			TLN_SetLastError(TLN_ERR_OUT_OF_MEMORY);
+			TLN_Error error = TLN_GetLastError();
+			TLN_DeleteBitmap(bitmap);
+			TLN_SetLastError(error);
 			return NULL;
 		}
 

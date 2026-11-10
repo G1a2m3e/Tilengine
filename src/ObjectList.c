@@ -279,7 +279,16 @@ TLN_ObjectList TLN_LoadObjectList(const char* filename, const char* layername)
 		/* load referenced tilesets */
 		TLN_Tileset tilesets[TMX_MAX_TILESET] = { 0 };
 		for (c = 0; c < tmxinfo.num_tilesets; c += 1)
+		{
 			tilesets[c] = TLN_LoadTileset(tmxinfo.tilesets[c].source);
+			if (tilesets[c] == NULL)
+			{
+				TLN_Error error = TLN_GetLastError();
+				TLN_DeleteObjectList(loader.objects);
+				TLN_SetLastError(error);
+				return NULL;
+			}
+		}
 
 
 		/* correct with firstgid */

@@ -34,8 +34,6 @@ struct Tileset
 	int		numtiles;		 /* number of tiles */
 	int		width;			 /* horizontal tile size */
 	int		height;			 /* vertical tile size */
-	int		hshift;			 /* horizontal shift */
-	int		hmask;			 /* horizontal bitmask */
 	int		size_tiles;		 /* size of tiles collection section */
 	int		tiles_per_row;	 /* number of tiles per row */
 	TLN_Palette palette;	 /* palette */
@@ -52,7 +50,7 @@ struct Tileset
 	((index) * (tileset)->height + (y))
 
 #define GetTilesetPixel(tileset,index,x,y) \
-	(tileset)->data[(GetTilesetLine(tileset, index, y) << (tileset)->hshift) + (x)]
+	(tileset)->data[(GetTilesetLine(tileset, index, y) * (tileset)->width) + (x)]
 
 void CopyTilesetTile(TLN_Tileset tileset, int tileid, TLN_Bitmap bitmap);
 TLN_Bitmap GetTilesetBitmap(TLN_Tileset tileset, int tileid);

@@ -26,18 +26,11 @@ static bool HasTransparentPixels (uint8_t* src, int width);
 TLN_Tileset TLN_CreateTileset (int numtiles, int width, int height, TLN_Palette palette, TLN_SequencePack sp, TLN_TileAttributes* attributes)
 {
 	TLN_Tileset tileset;
-	int hshift = 0;
 	int c;
 	int size;
 	int size_tiles;
 
-	for (c=0; c<=8; c++)
-	{
-		int mask = 1<<c;
-		if (mask==width)
-			hshift = c;
-	}
-	if (!hshift || height <= 0)
+	if (width <= 0 || height <= 0)
 	{
 		TLN_SetLastError (TLN_ERR_WRONG_SIZE);
 		return NULL;
@@ -55,8 +48,6 @@ TLN_Tileset TLN_CreateTileset (int numtiles, int width, int height, TLN_Palette 
 	tileset->tstype = TILESET_TILES;
 	tileset->width = width;
 	tileset->height = height;
-	tileset->hshift = hshift;
-	tileset->hmask = width - 1;
 	tileset->numtiles = numtiles;
 	tileset->palette = palette;
 	tileset->sp = sp;

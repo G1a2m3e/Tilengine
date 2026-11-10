@@ -2,7 +2,6 @@
 #define TRAPS_H
 
 #include "../../src/ObjectList.h"
-#include "Tilengine.h"
 #include "collision_handler.h"
 #include "player.h"
 #include <glib-object.h>
@@ -29,7 +28,7 @@ struct _TTrapClass {
 
 typedef struct {
   HitBox hitbox;
-  HitBox previous_hitbox; // Position before this frame's platform update.
+  HitBox previous_hitbox;
   int sprite_index;
   gboolean active;
 } TTrapData;

@@ -480,8 +480,8 @@ bool TLN_GetLayerTile (int nlayer, int x, int y, TLN_TileInfo* info)
 	xpos = x % layer->width;
 	if (xpos < 0)
 		xpos += layer->width;
-	xtile = xpos >> tileset->hshift;
-	srcx  = xpos & tileset->hmask;
+	xtile = xpos / tileset->width;
+	srcx  = xpos % tileset->width;
 	
 	if (layer->column)
 	{

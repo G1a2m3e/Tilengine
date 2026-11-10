@@ -28,7 +28,7 @@ void t_falling_platform_touch(TFallingPlatform *self) {
 }
 
 gboolean t_falling_platform_is_offscreen(TFallingPlatform *self,
-                                        int viewport_bottom) {
+                                         int viewport_bottom) {
   g_return_val_if_fail(T_IS_FALLING_PLATFORM(self), FALSE);
   return self->falling &&
          t_trap_get_data(T_TRAP(self))->hitbox.y >= viewport_bottom;

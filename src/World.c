@@ -51,7 +51,15 @@ bool TLN_LoadWorld(const char* filename, int first_layer)
 		case LAYER_OBJECT:
 		{
 			TLN_ObjectList objectlist = TLN_LoadObjectList(filename, tmxlayer->name);
-			TLN_SetLayerObjects(layerindex, objectlist, NULL);
+			if (!objectlist)
+				return false;
+			if (!TLN_SetLayerObjects(layerindex, objectlist, NULL))
+			{
+				TLN_Error error = TLN_GetLastError();
+				TLN_DeleteObjectList(objectlist);
+				TLN_SetLastError(error);
+				return false;
+			}
 		}
 		break;
 

@@ -206,7 +206,7 @@ int TMXGetSuitableTileset(TMXInfo* info, int gid, TLN_Tileset* tilesets)
 	for (c = 0; c < info->num_tilesets; c += 1)
 	{
 		const int first = info->tilesets[c].firstgid;
-		if (gid >= first && gid < first + tilesets[c]->numtiles)
+		if (tilesets[c] != NULL && gid >= first && gid < first + tilesets[c]->numtiles)
 			return c;
 	}
 	return -1;
