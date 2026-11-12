@@ -38,6 +38,8 @@ static int clamp_camera(float position, int world_size, int screen_size) {
 }
 
 static void update_camera(void) {
+  if (player_is_dead(get_player()))
+    return;
   SpriteData *data = get_sprite_data(T_SPRITE(get_player()));
   float center_x = data->rect.x + data->hitbox_offset.x_offset +
                    data->hitbox_offset.w * 0.5f;
@@ -122,15 +124,15 @@ void load_level(int level) {
   world_height = info.height * info.tileheight;
   int num_sprites = get_level_sprite_count(&info);
   if (!TLN_GetContext()) {
-    if (!TLN_Init(world_width, world_height, 32, 131, 0)) {
+    if (!TLN_Init(world_width, world_height, 32, 132, 0)) {
       fprintf(stderr, "Failed to initialize Tilengine\n");
       exit(1);
     }
-  } else if (info.num_layers > TLN_GetNumLayers() || num_sprites > 130) {
+  } else if (info.num_layers > TLN_GetNumLayers() || num_sprites > 128) {
     fprintf(stderr,
             "Insufficient capacity for level %d: layers %d/%d, sprites %d/%d\n",
             current_level, info.num_layers, TLN_GetNumLayers(), num_sprites,
-            130);
+            128);
     exit(1);
   }
   if (!TLN_LoadWorld(get_level_file_name(current_level), 0)) {
@@ -244,11 +246,17 @@ bool update(uint32_t frame) {
   uint32_t now = TLN_GetTicks();
   uint32_t elapsed = now - last_update_ms;
   last_update_ms = now;
+  if (player_is_dead(get_player()))
+    return !update_player_death(get_player());
 
   sprite_pre_update(T_SPRITE(get_player()), elapsed);
   trap_pre_update(elapsed);
 
-  update_env_interaction(elapsed);
+  if (update_env_interaction(elapsed)) {
+    trap_post_update(elapsed);
+    update_background(elapsed);
+    return true; // 死亡不表示关卡完成，也不再处理拾取等交互。
+  }
 
   sprite_post_update(T_SPRITE(get_player()), elapsed);
   trap_post_update(elapsed);

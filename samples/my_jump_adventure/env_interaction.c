@@ -5,6 +5,7 @@
 #include "falling_platform.h"
 #include "glib-object.h"
 #include "player.h"
+#include "saw.h"
 #include "sprite.h"
 #include "traps.h"
 #include <math.h>
@@ -59,26 +60,49 @@ void init_player(const char *player_name) {
   player = player_new(player_obj);
 }
 
-void update_env_interaction(uint32_t elapsed) {
-  if (!player)
-    return;
+static bool hits_saw(HitBox box, float dx, float dy) {
+  if (!traps)
+    return false;
+  for (guint i = 0; i < traps->len; ++i) {
+    TTrap *trap = g_ptr_array_index(traps, i);
+    SpriteData *data = get_sprite_data(T_SPRITE(trap));
+    if (!T_IS_SAW(trap) || !data->active)
+      continue;
+    Circle circle = {data->rect.x + data->rect.w * 0.5f,
+                     data->rect.y + data->rect.h * 0.5f, data->rect.w * 0.5f};
+    float hit_t;
+    if (swept_aabb_rect_circle(box, circle, dx - data->desired_dx,
+                               dy - data->desired_dy, &hit_t))
+      return true;
+  }
+  return false;
+}
 
-  SpriteData *data = get_sprite_data(T_SPRITE(player));
+bool update_env_interaction(uint32_t elapsed) {
+  if (!player)
+    return false;
+
+  SpriteData *player_data = get_sprite_data(T_SPRITE(player));
   HitBox box = get_sprite_hitbox(T_SPRITE(player));
-  float dx = data->desired_dx;
-  float dy = data->desired_dy;
+  float dx = player_data->desired_dx;
+  float dy = player_data->desired_dy;
+  if (hits_saw(box, dx, dy)) {
+    die(player);
+    return true;
+  }
+
   bool supported = false;
 
   if (traps) {
     for (guint i = 0; i < traps->len; ++i) {
       TTrap *trap = g_ptr_array_index(traps, i);
-      if (!get_sprite_data(T_SPRITE(trap))->active)
+      SpriteData *trap_data = get_sprite_data(T_SPRITE(trap));
+      if (!trap_data->active)
         continue;
-
       if (T_IS_FALLING_PLATFORM(trap)) {
         if (!supported && player_get_velocity_y(player) >= 0)
-          supported = t_falling_platform_carry(
-              T_FALLING_PLATFORM(trap), box, &dx, &dy);
+          supported =
+              t_falling_platform_carry(T_FALLING_PLATFORM(trap), box, &dx, &dy);
       }
     }
   }
@@ -86,8 +110,9 @@ void update_env_interaction(uint32_t elapsed) {
   HitBox result = handle_maps_collision(box, dx, dy);
   if (!supported)
     result = handle_traps_collision(box, result.x - box.x, result.y - box.y);
-  data->resolved_dx = result.x - box.x;
-  data->resolved_dy = result.y - box.y;
+  player_data->resolved_dx = result.x - box.x;
+  player_data->resolved_dy = result.y - box.y;
+  return false;
 }
 
 static bool is_player_grounded_with_map(Player *player) {
@@ -182,18 +207,6 @@ bool is_touching_wall(HitBox box) {
   return false;
 }
 
-static bool check_trap_collision(TTrap *trap, HitBox src, float dx, float dy,
-                                 float *hit_t, HitBox *result) {
-  if (!get_sprite_data(T_SPRITE(trap))->active)
-    return false;
-
-  if (T_IS_FALLING_PLATFORM(trap))
-    return t_falling_platform_check_collision(
-        T_FALLING_PLATFORM(trap), src, dx, dy, hit_t, result);
-
-  return false;
-}
-
 static void notify_trap_contact(TTrap *trap, HitBox box) {
   if (T_IS_FALLING_PLATFORM(trap)) {
     TFallingPlatform *platform = T_FALLING_PLATFORM(trap);
@@ -213,9 +226,12 @@ HitBox handle_traps_collision(HitBox src, float dx, float dy) {
   TTrap *landing = NULL;
   for (guint i = 0; i < traps->len; ++i) {
     TTrap *trap = g_ptr_array_index(traps, i);
+    if (!T_IS_FALLING_PLATFORM(trap))
+      continue;
     float hit_t;
     HitBox candidate;
-    if (check_trap_collision(trap, src, dx, dy, &hit_t, &candidate) &&
+    if (t_falling_platform_check_collision(T_FALLING_PLATFORM(trap), src, dx,
+                                           dy, &hit_t, &candidate) &&
         hit_t <= nearest) {
       nearest = hit_t;
       result = candidate;

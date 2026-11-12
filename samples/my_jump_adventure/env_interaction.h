@@ -15,7 +15,8 @@ extern Player *get_player();
 
 extern GPtrArray *get_traps_array();
 
-extern void update_env_interaction(uint32_t elapsed);
+/* Returns true when a saw hit kills the player; skips all remaining collisions. */
+extern bool update_env_interaction(uint32_t elapsed);
 
 extern HitBox handle_traps_collision(HitBox src, float dx, float dy);
 #endif

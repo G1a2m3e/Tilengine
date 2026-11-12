@@ -14,6 +14,11 @@ Player *player_new(TLN_Object *obj);
 
 float player_get_velocity_y(Player *self);
 
+void die(Player *self);
+bool player_is_dead(Player *self);
+/* Returns true once the one-shot disappearance animation has finished. */
+bool update_player_death(Player *self);
+
 G_END_DECLS
 
 #endif

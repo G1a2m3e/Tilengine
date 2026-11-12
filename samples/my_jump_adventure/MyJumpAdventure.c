@@ -1,6 +1,7 @@
 #include "../../src/LoadFile.h"
 #include "Tilengine.h"
 #include "game.h"
+#include "env_interaction.h"
 #include "traps.h"
 #include "utils.h"
 #include <SDL2/SDL.h>
@@ -14,7 +15,8 @@
   2. 水果单独放在对象层fruits中
 */
 #define BUTTON_SPRITE 128
-#define TRANSITION_SPRITE (BUTTON_SPRITE + 2)
+#define BUTTON_COUNT 3
+#define TRANSITION_SPRITE (BUTTON_SPRITE + BUTTON_COUNT)
 #define BUTTON_WIDTH 20
 #define BUTTON_HEIGHT 20
 #define BUTTON_MARGIN 3
@@ -25,7 +27,8 @@ static struct {
   TLN_Spriteset set;
   int x;
   bool enabled;
-} level_buttons[2];
+} level_buttons[BUTTON_COUNT];
+static const int level_offsets[BUTTON_COUNT] = {-1, 1, 0};
 static TLN_Spriteset transition_set;
 static uint32_t transition_started;
 static enum { PLAYING, CLOSING, SWITCHING, OPENING } transition_state;
@@ -63,9 +66,9 @@ static bool level_exists(int level) {
 }
 
 static void update_level_buttons(void) {
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < BUTTON_COUNT; ++i) {
     level_buttons[i].enabled =
-        level_exists(get_current_level() + (i == 0 ? -1 : 1));
+        (i == 2 || level_exists(get_current_level() + level_offsets[i]));
     TLN_SetSpriteBlendMode(BUTTON_SPRITE + i,
                            level_buttons[i].enabled ? BLEND_NONE : BLEND_MIX50,
                            0);
@@ -95,24 +98,25 @@ static void on_mouse_event(SDL_Event *event) {
       (event->button.x - (window_width - width) / 2) * TLN_GetWidth() / width;
   int y = (event->button.y - (window_height - height) / 2) * TLN_GetHeight() /
           height;
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < BUTTON_COUNT; ++i) {
     if (level_buttons[i].enabled && y >= BUTTON_MARGIN &&
         y < BUTTON_MARGIN + BUTTON_HEIGHT && x >= level_buttons[i].x &&
         x < level_buttons[i].x + BUTTON_WIDTH) {
-      change_level(get_current_level() + (i == 0 ? -1 : 1));
+      change_level(get_current_level() + level_offsets[i]);
       return;
     }
   }
 }
 
 static bool init_level_buttons(void) {
-  const char *files[] = {"Menu/Buttons/Previous.png", "Menu/Buttons/Next.png"};
-  for (int i = 0; i < 2; ++i) {
+  const char *files[] = {"Menu/Buttons/Previous.png", "Menu/Buttons/Next.png",
+                         "Menu/Buttons/Restart.png"};
+  for (int i = 0; i < BUTTON_COUNT; ++i) {
     level_buttons[i].set = TLN_LoadSpriteset(files[i]);
     if (!level_buttons[i].set)
       return false;
     level_buttons[i].x = TLN_GetWidth() - BUTTON_MARGIN - BUTTON_WIDTH -
-                         (1 - i) * (BUTTON_WIDTH + BUTTON_MARGIN);
+                         (BUTTON_COUNT - 1 - i) * (BUTTON_WIDTH + BUTTON_MARGIN);
     TLN_ConfigSprite(BUTTON_SPRITE + i, level_buttons[i].set, FLAG_PRIORITY);
     TLN_EnableSpriteCollision(BUTTON_SPRITE + i, false);
     // TLN_SetSpriteScaling(BUTTON_SPRITE + i, 1, 1);
@@ -149,7 +153,7 @@ int main(void) {
   TLN_SetSDLCallback(NULL);
   TLN_DisableSprite(TRANSITION_SPRITE);
   TLN_DeleteSpriteset(transition_set);
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < BUTTON_COUNT; ++i) {
     TLN_DisableSprite(BUTTON_SPRITE + i);
     TLN_DeleteSpriteset(level_buttons[i].set);
   }
@@ -186,5 +190,5 @@ static void main_loop(uint32_t frame) {
   bool switch_level = !update(frame);
   render(frame);
   if (switch_level)
-    change_level(get_current_level() + 1);
+    change_level(get_current_level() + (player_is_dead(get_player()) ? 0 : 1));
 }

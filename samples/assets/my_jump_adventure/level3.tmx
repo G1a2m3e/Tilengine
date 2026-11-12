@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="16" tilewidth="16" tileheight="16" infinite="0" nextlayerid="11" nextobjectid="88">
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="16" tilewidth="16" tileheight="16" infinite="0" nextlayerid="11" nextobjectid="90">
  <tileset firstgid="1" source="Terrain.tsx"/>
  <tileset firstgid="243" source="player.tsx"/>
  <tileset firstgid="244" source="kiwi.tsx"/>
@@ -11,6 +11,7 @@
  <tileset firstgid="346" source="banna.tsx"/>
  <tileset firstgid="363" source="chain.tsx"/>
  <tileset firstgid="364" source="saw.tsx"/>
+ <tileset firstgid="372" source="number.tsx"/>
  <imagelayer id="2" name="background" offsetx="0" offsety="16" repeatx="1" repeaty="1">
   <image source="Background/Green.png" width="64" height="64"/>
  </imagelayer>
@@ -56,12 +57,12 @@
     </properties>
    </object>
    <object id="67" name="saw2" type="101" gid="364" x="428.333" y="135.667" width="38" height="38">
- <properties>
+    <properties>
      <property name="move_mode" value="pingpong"/>
      <property name="path" type="object" value="87"/>
      <property name="speed" type="float" value="45"/>
     </properties>
-    </object>
+   </object>
    <object id="78" name="saw3" type="101" gid="364" x="134.333" y="116.667" width="38" height="38">
     <properties>
      <property name="move_mode" value="loop"/>
@@ -77,7 +78,7 @@
     </properties>
    </object>
    <object id="85" x="128" y="96">
-    <polyline points="0,0 -30,0 -30,64 96,64 96,0 0,0"/>
+    <polyline points="0,0 -32,0 -32,64 96,64 96,0 0,0"/>
    </object>
    <object id="86" x="408.667" y="96">
     <polyline points="0,2.66667 -3.33333e-07,-84"/>
@@ -110,6 +111,7 @@
  <group id="3" name="player">
   <objectgroup id="6" name="player">
    <object id="1" name="virtual_guy" gid="243" x="42.0253" y="192" width="32" height="32"/>
+   <object id="89" gid="374" x="270.5" y="256.5" width="19" height="17"/>
   </objectgroup>
  </group>
  <group id="4" name="fruits">
@@ -117,10 +119,10 @@
    <object id="7" gid="278" x="466" y="203.333" width="32" height="32"/>
    <object id="8" gid="278" x="498" y="222.667" width="32" height="32"/>
    <object id="9" gid="295" x="502" y="190.667" width="32" height="32"/>
-   <object id="11" gid="261" x="504.667" y="158.667" width="32" height="32"/>
+   <object id="11" gid="261" x="480" y="88.0003" width="32" height="32"/>
    <object id="12" gid="312" x="287.333" y="232.667" width="32" height="32"/>
-   <object id="13" gid="329" x="226" y="140" width="32" height="32"/>
-   <object id="14" gid="329" x="225.333" y="174.667" width="32" height="32"/>
+   <object id="13" gid="329" x="265.333" y="139.333" width="32" height="32"/>
+   <object id="14" gid="329" x="266" y="172.667" width="32" height="32"/>
    <object id="15" gid="346" x="98.6667" y="76" width="32" height="32"/>
    <object id="16" gid="346" x="136.667" y="76" width="32" height="32"/>
    <object id="17" gid="312" x="175.333" y="76" width="32" height="32"/>
@@ -128,7 +130,7 @@
    <object id="19" gid="244" x="264" y="76" width="32" height="32"/>
    <object id="20" gid="261" x="168" y="236" width="32" height="32"/>
    <object id="21" gid="261" x="332.667" y="108" width="32" height="32"/>
-   <object id="22" gid="295" x="510.667" y="108.667" width="32" height="32"/>
+   <object id="22" gid="295" x="456.667" y="56.667" width="32" height="32"/>
   </objectgroup>
  </group>
 </map>

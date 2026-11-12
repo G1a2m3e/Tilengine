@@ -14,13 +14,14 @@
 #define JUMP_SPEED (160.0f * JUMP_PACE)
 #define GRAVITY (300.0f * JUMP_PACE * JUMP_PACE)
 
-typedef enum { IDLE, RUNNING, JUMPING_OR_FALLING, SLIDING } PlayerState;
+typedef enum { IDLE, RUNNING, JUMPING_OR_FALLING, SLIDING, DIED } PlayerState;
 typedef enum {
   SHOW_IDLE,
   SHOW_RUNNING,
   SHOW_JUMPING_OR_FALLING,
   SHOW_DOUBLE_JUMPING,
-  SHOW_SLIDING
+  SHOW_SLIDING,
+  SHOW_DIDE
 } ShowState;
 
 struct _Player {
@@ -32,7 +33,6 @@ struct _Player {
   bool touching_wall;
   bool double_jumping;
   bool jump_was_down;
-  bool died;
   ShowState show_state;
 };
 
@@ -43,11 +43,13 @@ static TLN_Spriteset running_set;
 static TLN_Spriteset jump_set;
 static TLN_Spriteset double_jump_set;
 static TLN_Spriteset sliding_set;
+static TLN_Spriteset death_set;
 
 static TLN_Sequence idle_seq;
 static TLN_Sequence running_seq;
 static TLN_Sequence double_jump_seq;
 static TLN_Sequence sliding_seq;
+static TLN_Sequence death_seq;
 
 typedef struct {
   int direction; // -1 向左，0 不移动，1 向右
@@ -67,7 +69,6 @@ static void player_init(Player *self) {
   self->touching_wall = false;
   self->double_jumping = false;
   self->jump_was_down = false;
-  self->died = false;
 }
 
 static PlayerInput read_player_input(Player *player) {
@@ -124,6 +125,9 @@ static PlayerMotion advance_status(Player *player, const PlayerInput *input,
 
 static void player_pre_update(Sprite *sprite, uint32_t elapsed) {
   Player *player = T_PLAYER(sprite);
+  if (player->state == DIED) {
+    return;
+  }
   SpriteData *data = get_sprite_data(sprite);
   PlayerInput input = read_player_input(player);
   // 通过输入和当前状态决定期望位移和切换到的状态
@@ -134,6 +138,9 @@ static void player_pre_update(Sprite *sprite, uint32_t elapsed) {
 
 static void player_post_update(Sprite *sprite, uint32_t elapsed) {
   Player *player = T_PLAYER(sprite);
+  if (player->state == DIED) {
+    return;
+  }
   SpriteData *data = get_sprite_data(sprite);
   data->rect.x += data->resolved_dx;
   data->rect.y += data->resolved_dy;
@@ -158,6 +165,11 @@ static void player_post_update(Sprite *sprite, uint32_t elapsed) {
 static void player_render(Sprite *sprite, uint32_t elapsed) {
   Player *player = T_PLAYER(sprite);
   SpriteData *data = get_sprite_data(sprite);
+  if (player->state == DIED) {
+    // 将 96×96 特效中心对齐原来 32×32 角色的中心。
+    TLN_SetSpriteWorldPosition(data->sprite_index, data->rect.x - 32, data->rect.y - 32);
+    return;
+  }
   TLN_SetSpriteWorldPosition(data->sprite_index, data->rect.x, data->rect.y);
   TLN_Spriteset spriteset = idle_set;
   TLN_Sequence sequence = idle_seq;
@@ -187,6 +199,9 @@ static void player_render(Sprite *sprite, uint32_t elapsed) {
     sequence = sliding_seq;
     next_show = SHOW_SLIDING;
     break;
+  case DIED:
+    next_show = SHOW_DIDE;
+    break;
   }
 
   TLN_EnableSpriteFlag(data->sprite_index, FLAG_FLIPX, !player->facing_right);
@@ -200,7 +215,14 @@ static void player_render(Sprite *sprite, uint32_t elapsed) {
   player->show_state = next_show;
 }
 
+static void player_finalize(GObject *object) {
+  Player *player = T_PLAYER(object);
+  deactive_sprite(T_SPRITE(player));
+  G_OBJECT_CLASS(player_parent_class)->finalize(object);
+}
+
 static void player_class_init(PlayerClass *klass) {
+  G_OBJECT_CLASS(klass)->finalize = player_finalize;
   SpriteClass *sprite_class = T_SPRITE_CLASS(klass);
 
   sprite_class->sprite_pre_update = player_pre_update;
@@ -209,25 +231,63 @@ static void player_class_init(PlayerClass *klass) {
 }
 
 static void init_animation() {
+  if (!death_set)
+    death_set = TLN_LoadSpriteset("Main Characters/Desappearing (96x96).png");
+  if (!death_seq)
+    death_seq = TLN_CreateSpriteSequence("death", death_set, "death", 3);
   if (!idle_set)
-    idle_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Idle (32x32).png");
+    idle_set =
+        TLN_LoadSpriteset("Main Characters/Virtual Guy/Idle (32x32).png");
   if (!running_set)
-    running_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Run (32x32).png");
+    running_set =
+        TLN_LoadSpriteset("Main Characters/Virtual Guy/Run (32x32).png");
   if (!jump_set)
-    jump_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Jump (32x32).png");
+    jump_set =
+        TLN_LoadSpriteset("Main Characters/Virtual Guy/Jump (32x32).png");
   if (!double_jump_set)
-    double_jump_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Double Jump (32x32).png");
+    double_jump_set = TLN_LoadSpriteset(
+        "Main Characters/Virtual Guy/Double Jump (32x32).png");
   if (!sliding_set)
-    sliding_set = TLN_LoadSpriteset("Main Characters/Virtual Guy/Wall Jump (32x32).png");
+    sliding_set =
+        TLN_LoadSpriteset("Main Characters/Virtual Guy/Wall Jump (32x32).png");
 
   if (!idle_seq)
     idle_seq = TLN_CreateSpriteSequence("idle", idle_set, "idle", 3);
   if (!running_seq)
-    running_seq = TLN_CreateSpriteSequence("running", running_set, "running", 3);
+    running_seq =
+        TLN_CreateSpriteSequence("running", running_set, "running", 3);
   if (!double_jump_seq)
-    double_jump_seq = TLN_CreateSpriteSequence("double_jump", double_jump_set, "double_jump", 3);
+    double_jump_seq = TLN_CreateSpriteSequence("double_jump", double_jump_set,
+                                               "double_jump", 3);
   if (!sliding_seq)
-    sliding_seq = TLN_CreateSpriteSequence("sliding", sliding_set, "sliding", 3);
+    sliding_seq =
+        TLN_CreateSpriteSequence("sliding", sliding_set, "sliding", 3);
+}
+
+bool player_is_dead(Player *player) { return player->state == DIED; }
+
+void die(Player *player) {
+  if (player_is_dead(player))
+    return;
+  player->state = DIED;
+  player->velocity_y = 0;
+  SpriteData *data = get_sprite_data(T_SPRITE(player));
+  data->desired_dx = data->desired_dy = 0;
+  data->resolved_dx = data->resolved_dy = 0;
+  TLN_DisableSpriteAnimation(data->sprite_index);
+  TLN_SetSpriteObject(data->sprite_index, -1, 0);
+  TLN_SetSpriteSet(data->sprite_index, death_set);
+  TLN_SetSpriteFlags(data->sprite_index,
+                     FLAG_PRIORITY | (player->facing_right ? 0 : FLAG_FLIPX));
+  TLN_SetSpriteAnimation(data->sprite_index, death_seq, 1);
+}
+
+bool update_player_death(Player *player) {
+  SpriteData *data = get_sprite_data(T_SPRITE(player));
+  if (TLN_GetAnimationState(data->sprite_index))
+    return false;
+  deactive_sprite(T_SPRITE(player));
+  return true;
 }
 
 Player *player_new(TLN_Object *obj) {
