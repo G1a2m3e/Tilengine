@@ -131,8 +131,16 @@ static void t_falling_platform_pre_update(Sprite *sprite, uint32_t elapsed) {
 
     self->falling = TRUE;
     TLN_DisableSpriteAnimation(data->sprite_index);
-    if (!off_set)
-      off_set = TLN_LoadSpriteset("Traps/Falling Platforms/Off.png");
+    if (!off_set) {
+      TLN_Bitmap bitmap = TLN_LoadBitmap("Traps/Falling Platforms/Off.png");
+      if (bitmap) {
+        TLN_SpriteData frame = {.w = TLN_GetBitmapWidth(bitmap),
+                                .h = TLN_GetBitmapHeight(bitmap)};
+        off_set = TLN_CreateSpriteset(bitmap, &frame, 1);
+        if (!off_set)
+          TLN_DeleteBitmap(bitmap);
+      }
+    }
     if (off_set)
       TLN_SetSpriteSet(data->sprite_index, off_set);
   }

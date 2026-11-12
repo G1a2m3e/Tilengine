@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="35" height="16" tilewidth="16" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="40">
+ <tileset firstgid="1" source="player.tsx"/>
+ <tileset firstgid="2" source="Terrain.tsx"/>
+ <tileset firstgid="244" source="orange.tsx"/>
+ <tileset firstgid="261" source="blink_rock_head.tsx"/>
+ <tileset firstgid="265" source="apple.tsx"/>
+ <imagelayer id="2" name="background" repeatx="1" repeaty="1">
+  <image source="Background/Brown.png" width="64" height="64"/>
+ </imagelayer>
+ <layer id="1" name="maps" width="35" height="16">
+  <data encoding="csv">
+5,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,6,
+26,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,24,
+26,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,24,
+26,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,24,
+26,0,0,0,0,184,185,185,185,185,185,185,186,0,0,0,107,108,108,108,108,108,108,108,108,108,108,108,109,213,214,0,0,0,24,
+26,0,0,0,0,206,207,229,229,229,207,207,208,0,0,0,151,152,152,152,152,152,152,152,152,152,152,152,153,235,236,0,0,0,24,
+26,0,0,0,0,206,208,0,0,0,206,207,208,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,24,
+26,0,0,0,0,206,208,0,0,0,206,207,208,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,46,
+26,0,0,0,0,206,208,0,0,212,206,207,208,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+26,0,0,0,0,206,209,185,185,185,210,207,208,185,185,185,185,185,185,185,185,185,185,185,185,185,185,129,108,108,108,130,130,184,186,
+26,0,0,0,0,228,229,229,229,229,229,229,229,229,229,229,229,229,229,229,229,229,229,229,229,229,229,129,130,130,130,130,108,206,208,
+26,0,0,0,0,0,0,0,0,0,0,0,0,0,213,214,212,0,0,0,0,0,0,0,0,212,0,0,0,0,0,0,0,206,208,
+26,0,0,0,0,0,0,0,0,0,0,0,0,0,235,236,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,206,230,
+26,0,0,0,0,0,183,184,185,186,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,184,185,185,210,212,
+26,0,0,0,0,0,184,210,212,230,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,179,179,179,179,179,
+203,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,179,25,25,25,25,25
+</data>
+ </layer>
+ <group id="3" name="fruits">
+  <objectgroup id="6" name="fruits">
+   <object id="2" gid="244" x="277.467" y="125.606" width="32" height="32"/>
+   <object id="4" gid="244" x="244.934" y="125.505" width="32" height="32"/>
+   <object id="5" gid="244" x="308.451" y="125.505" width="32" height="32"/>
+   <object id="6" gid="244" x="368.87" y="125.505" width="32" height="32"/>
+   <object id="7" gid="244" x="337.886" y="126.28" width="32" height="32"/>
+   <object id="8" gid="244" x="399.08" y="125.505" width="32" height="32"/>
+   <object id="9" gid="244" x="425.416" y="123.956" width="32" height="32"/>
+   <object id="10" gid="244" x="455.626" y="125.505" width="32" height="32"/>
+   <object id="11" gid="244" x="480.413" y="123.181" width="32" height="32"/>
+   <object id="16" gid="244" x="272.127" y="68.2088" width="32" height="32"/>
+   <object id="17" gid="244" x="239.594" y="68.1078" width="32" height="32"/>
+   <object id="18" gid="244" x="303.111" y="68.1078" width="32" height="32"/>
+   <object id="19" gid="244" x="363.53" y="68.1078" width="32" height="32"/>
+   <object id="20" gid="244" x="332.546" y="68.8828" width="32" height="32"/>
+   <object id="21" gid="244" x="393.74" y="68.1078" width="32" height="32"/>
+   <object id="22" gid="244" x="420.076" y="66.5588" width="32" height="32"/>
+   <object id="23" gid="244" x="450.286" y="68.1078" width="32" height="32"/>
+   <object id="24" gid="244" x="475.073" y="65.7838" width="32" height="32"/>
+   <object id="25" gid="265" x="275.333" y="209.333" width="32" height="32"/>
+   <object id="26" gid="265" x="310" y="207.333" width="32" height="32"/>
+   <object id="27" gid="265" x="341.333" y="208" width="32" height="32"/>
+   <object id="28" gid="265" x="370.667" y="206" width="32" height="32"/>
+   <object id="29" gid="265" x="262" y="216" width="32" height="32"/>
+   <object id="30" gid="265" x="294.667" y="217.333" width="32" height="32"/>
+   <object id="31" gid="265" x="328" y="216.667" width="32" height="32"/>
+   <object id="32" gid="265" x="361.333" y="216" width="32" height="32"/>
+   <object id="33" gid="265" x="26.6667" y="57.3333" width="32" height="32"/>
+   <object id="34" gid="265" x="17.3333" y="92.6667" width="32" height="32"/>
+   <object id="35" gid="265" x="35.3333" y="112" width="32" height="32"/>
+   <object id="36" gid="265" x="26.6667" y="142" width="32" height="32"/>
+   <object id="37" gid="265" x="31.3333" y="172" width="32" height="32"/>
+   <object id="38" gid="265" x="16" y="118.667" width="32" height="32"/>
+   <object id="39" gid="265" x="27.3333" y="194.667" width="32" height="32"/>
+  </objectgroup>
+ </group>
+ <group id="4" name="player">
+  <objectgroup id="5" name="player">
+   <object id="1" name="virtual_guy" gid="2147483649" x="489.156" y="208" width="32" height="32"/>
+  </objectgroup>
+ </group>
+ <group id="7" name="traps">
+  <objectgroup id="8" name="traps">
+   <object id="12" type="102" gid="261" x="27.5334" y="245.368" width="42" height="42"/>
+   <object id="13" type="102" gid="261" x="507.022" y="52.6587" width="42" height="42"/>
+   <object id="14" type="102" gid="261" x="202.942" y="149.907" width="42" height="42"/>
+   <object id="15" type="102" gid="261" x="443.762" y="245.635" width="42" height="42"/>
+  </objectgroup>
+ </group>
+</map>

@@ -36,6 +36,11 @@ TLN_Tilemap TLN_CreateTilemap (int rows, int cols, TLN_Tile tiles, uint32_t bgco
 	tilemap->cols = cols;
 	tilemap->bgcolor = bgcolor;
 	tilemap->tilesets[0] = tileset;
+	if (tileset != NULL)
+	{
+		tilemap->tilewidth = tileset->width;
+		tilemap->tileheight = tileset->height;
+	}
 	tilemap->visible = true;
 
 	if (tiles)
@@ -119,6 +124,11 @@ bool TLN_SetTilemapTileset2(TLN_Tilemap tilemap, TLN_Tileset tileset, int index)
 	}
 
 	tilemap->tilesets[index] = tileset;
+	if (tilemap->tilewidth <= 0 || tilemap->tileheight <= 0)
+	{
+		tilemap->tilewidth = tileset->width;
+		tilemap->tileheight = tileset->height;
+	}
 	TLN_SetLastError(TLN_ERR_OK);
 	return true;
 }

@@ -22,6 +22,7 @@ struct Tilemap
 	DEFINE_OBJECT;
 	int		rows;		/* rows*/
 	int		cols;		/* columns */
+	int tilewidth, tileheight; /* map grid size in pixels, independent of tilesets */
 	int		bgcolor;	/* background color */
 	int		id;			/* id property */
 	char class_name[64]; /* Tiled custom class */

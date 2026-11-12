@@ -348,16 +348,15 @@ static bool DrawTiledScanline(int nlayer, uint32_t* dstpixel, int nscan, int tx1
 	/* target lines */
 	int x = tx1;
 	const TLN_Tilemap tilemap = layer->tilemap;
-	const TLN_Tileset tileset = tilemap->tilesets[0];
 	int xpos = (layer->hstart + x) % layer->width;
-	int xtile = xpos / tileset->width;
+	int xtile = xpos / tilemap->tilewidth;
 
-	scan.width = scan.stride = tileset->width;
-	scan.height = tileset->height;
-	scan.srcx = xpos % tileset->width;
+	scan.width = scan.stride = tilemap->tilewidth;
+	scan.height = tilemap->tileheight;
+	scan.srcx = xpos % tilemap->tilewidth;
 
 	/* fill whole scanline */
-	int column = x % tileset->width;
+	int column = x % tilemap->tilewidth;
 	while (x < tx2)
 	{
 		/* column offset: update ypos */
@@ -371,13 +370,13 @@ static bool DrawTiledScanline(int nlayer, uint32_t* dstpixel, int nscan, int tx1
 		else
 			ypos = (layer->vstart + nscan) % layer->height;
 
-		int ytile = ypos / tileset->height;
-		scan.srcy = ypos % tileset->height;
+		int ytile = ypos / tilemap->tileheight;
+		scan.srcy = ypos % tilemap->tileheight;
 
 		TLN_Tile tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 
 		/* get effective tile width */
-		int tilewidth = tileset->width - scan.srcx;
+		int tilewidth = tilemap->tilewidth - scan.srcx;
 		int x1 = x + tilewidth;
 		if (x1 > tx2)
 			x1 = tx2;
@@ -387,6 +386,8 @@ static bool DrawTiledScanline(int nlayer, uint32_t* dstpixel, int nscan, int tx1
 		if (tile->index != 0)
 		{
 			const TLN_Tileset tileset = tilemap->tilesets[tile->tileset];
+			scan.width = scan.stride = tileset->width;
+			scan.height = tileset->height;
 			const uint16_t tile_index = tileset->tiles[tile->index] - 1;
 
 			/* selects suitable palette */
@@ -434,17 +435,16 @@ static bool DrawTiledScanlineScaling(int nlayer, uint32_t* dstpixel, int nscan, 
 	/* target lines */
 	int x = tx1;
 	const TLN_Tilemap tilemap = layer->tilemap;
-	const TLN_Tileset tileset = tilemap->tilesets[0];
 	int xpos = (layer->hstart + fix2int(x*layer->dx)) % layer->width;
-	int xtile = xpos / tileset->width;
+	int xtile = xpos / tilemap->tilewidth;
 
-	scan.width = scan.stride = tileset->width;
-	scan.height = tileset->height;
-	scan.srcx = xpos % tileset->width;
+	scan.width = scan.stride = tilemap->tilewidth;
+	scan.height = tilemap->tileheight;
+	scan.srcx = xpos % tilemap->tilewidth;
 
 	/* fill whole scanline */
 	fix_t fix_x = int2fix(x);
-	int column = x % tileset->width;
+	int column = x % tilemap->tilewidth;
 	while (x < tx2)
 	{
 		/* column offset: update ypos */
@@ -458,13 +458,13 @@ static bool DrawTiledScanlineScaling(int nlayer, uint32_t* dstpixel, int nscan, 
 		else
 			ypos = ypos % layer->height;
 
-		int ytile = ypos / tileset->height;
-		scan.srcy = ypos % tileset->height;
+		int ytile = ypos / tilemap->tileheight;
+		scan.srcy = ypos % tilemap->tileheight;
 
 		TLN_Tile tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 
 		/* get effective tile width */
-		int tilewidth = tileset->width - scan.srcx;
+		int tilewidth = tilemap->tilewidth - scan.srcx;
 		fix_t dx = int2fix(tilewidth);
 		fix_t fix_tilewidth = tilewidth * layer->xfactor;
 		fix_x += fix_tilewidth;
@@ -484,6 +484,8 @@ static bool DrawTiledScanlineScaling(int nlayer, uint32_t* dstpixel, int nscan, 
 		if (tile->index != 0)
 		{
 			const TLN_Tileset tileset = tilemap->tilesets[tile->tileset];
+			scan.width = scan.stride = tileset->width;
+			scan.height = tileset->height;
 			const uint16_t tile_index = tileset->tiles[tile->index] - 1;
 
 			/* selects suitable palette */
@@ -530,7 +532,6 @@ static bool DrawTiledScanlineAffine(int nlayer, uint32_t* dstpixel, int nscan, i
 	Tilescan scan = { 0 };
 
 	const TLN_Tilemap tilemap = layer->tilemap;
-	const TLN_Tileset tileset = tilemap->tilesets[0];
 	int xpos = layer->hstart;
 	int ypos = layer->vstart + nscan;
 
@@ -549,8 +550,8 @@ static bool DrawTiledScanlineAffine(int nlayer, uint32_t* dstpixel, int nscan, i
 	const int dx = (x2 - x1) / twidth;
 	const int dy = (y2 - y1) / twidth;
 
-	scan.width = scan.stride = tileset->width;
-	scan.height = tileset->height;
+	scan.width = scan.stride = tilemap->tilewidth;
+	scan.height = tilemap->tileheight;
 	dstpixel += tx1;
 
 	while (tx1 < tx2)
@@ -558,17 +559,19 @@ static bool DrawTiledScanlineAffine(int nlayer, uint32_t* dstpixel, int nscan, i
 		xpos = abs((fix2int(x1) + layer->width)) % layer->width;
 		ypos = abs((fix2int(y1) + layer->height)) % layer->height;
 
-		int xtile = xpos / tileset->width;
-		int ytile = ypos / tileset->height;
+		int xtile = xpos / tilemap->tilewidth;
+		int ytile = ypos / tilemap->tileheight;
 
-		scan.srcx = xpos % tileset->width;
-		scan.srcy = ypos % tileset->height;
+		scan.srcx = xpos % tilemap->tilewidth;
+		scan.srcy = ypos % tilemap->tileheight;
 		TLN_Tile tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 
 		/* paint if not empty tile */
 		if (tile->index != 0)
 		{
 			const TLN_Tileset tileset = tilemap->tilesets[tile->tileset];
+			scan.width = scan.stride = tileset->width;
+			scan.height = tileset->height;
 			const uint16_t tile_index = tileset->tiles[tile->index] - 1;
 
 			/* process flip & rotation flags */
@@ -601,30 +604,31 @@ static bool DrawTiledScanlinePixelMapping(int nlayer, uint32_t* dstpixel, int ns
 	dstpixel += x;
 
 	const TLN_Tilemap tilemap = layer->tilemap;
-	const TLN_Tileset tileset = tilemap->tilesets[0];
 	const int hstart = layer->hstart + layer->width;
 	const int vstart = layer->vstart + layer->height;
 	TLN_PixelMap* pixel_map = &layer->pixel_map[nscan*engine->framebuffer.width + x];
 
-	scan.width = scan.stride = tileset->width;
-	scan.height = tileset->height;
+	scan.width = scan.stride = tilemap->tilewidth;
+	scan.height = tilemap->tileheight;
 
 	while (x < tx2)
 	{
 		int xpos = abs(hstart + pixel_map->dx) % layer->width;
 		int ypos = abs(vstart + pixel_map->dy) % layer->height;
 
-		int xtile = xpos / tileset->width;
-		int ytile = ypos / tileset->height;
+		int xtile = xpos / tilemap->tilewidth;
+		int ytile = ypos / tilemap->tileheight;
 
-		scan.srcx = xpos % tileset->width;
-		scan.srcy = ypos % tileset->height;
+		scan.srcx = xpos % tilemap->tilewidth;
+		scan.srcy = ypos % tilemap->tileheight;
 		TLN_Tile tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 
 		/* paint if not empty tile */
 		if (tile->index != 0)
 		{
 			const TLN_Tileset tileset = tilemap->tilesets[tile->tileset];
+			scan.width = scan.stride = tileset->width;
+			scan.height = tileset->height;
 			const uint16_t tile_index = tileset->tiles[tile->index] - 1;
 
 			/* process flip & rotation flags */

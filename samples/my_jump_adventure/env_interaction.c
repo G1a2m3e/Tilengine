@@ -126,8 +126,8 @@ static bool is_player_grounded_with_map(Player *player) {
   TLN_Tilemap tilemap = get_collision_tilemap();
   if (!tilemap)
     return false;
-  int tw = TLN_GetTileWidth(tilemap->tilesets[0]);
-  int th = TLN_GetTileHeight(tilemap->tilesets[0]);
+  int tw = tilemap->tilewidth;
+  int th = tilemap->tileheight;
 
   float bottom = box.y + box.h;
   int row = (int)floorf(bottom / th);
@@ -181,8 +181,8 @@ bool is_touching_wall(HitBox box) {
   TLN_Tilemap tilemap = get_collision_tilemap();
   if (!tilemap)
     return false;
-  int tw = TLN_GetTileWidth(tilemap->tilesets[0]);
-  int th = TLN_GetTileHeight(tilemap->tilesets[0]);
+  int tw = tilemap->tilewidth;
+  int th = tilemap->tileheight;
 
   int first = (int)floorf(box.y / th);
   int last = (int)ceilf((box.y + box.h) / th) - 1;

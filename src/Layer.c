@@ -42,8 +42,13 @@ bool TLN_SetLayer(int nlayer, TLN_Tileset tileset, TLN_Tilemap tilemap)
 	if (!CheckBaseObject(tileset, OT_TILESET))
 		return false;
 
-	/* Tile scanlines use these dimensions for division and wrapping. */
-	if (tileset->width <= 0 || tileset->height <= 0 ||
+	/* TMX grid dimensions are independent of the first referenced tileset. */
+	if (tilemap->tilewidth <= 0 || tilemap->tileheight <= 0)
+	{
+		tilemap->tilewidth = tileset->width;
+		tilemap->tileheight = tileset->height;
+	}
+	if (tilemap->tilewidth <= 0 || tilemap->tileheight <= 0 ||
 		tilemap->cols <= 0 || tilemap->rows <= 0)
 	{
 		TLN_SetLastError(TLN_ERR_WRONG_SIZE);
@@ -51,8 +56,8 @@ bool TLN_SetLayer(int nlayer, TLN_Tileset tileset, TLN_Tilemap tilemap)
 	}
 
 	layer->tilemap = tilemap;
-	layer->width = tilemap->cols*tileset->width;
-	layer->height = tilemap->rows*tileset->height;
+	layer->width = tilemap->cols*tilemap->tilewidth;
+	layer->height = tilemap->rows*tilemap->tileheight;
 	layer->bitmap = NULL;
 	layer->objects = NULL;
 	layer->type = LAYER_TILE;
@@ -73,7 +78,7 @@ bool TLN_SetLayer(int nlayer, TLN_Tileset tileset, TLN_Tilemap tilemap)
 			Tile* tile = tilemap->tiles;
 			for (c = 0; c < num_tiles; c++, tile++)
 			{
-				if (tile->index != 0 && tile->index < tileset->numtiles)
+				if (tile->tileset == ts && tile->index != 0 && tile->index <= tileset->numtiles)
 				{
 					if (tileset->attributes[tile->index - 1].priority == true)
 						tile->flags |= FLAG_PRIORITY;
@@ -471,7 +476,7 @@ bool TLN_GetLayerTile (int nlayer, int x, int y, TLN_TileInfo* info)
 	}
 
 	layer = &engine->layers[nlayer];
-	if (!CheckBaseObject(layer->tilemap, OT_TILEMAP) || !CheckBaseObject (layer->tilemap->tilesets[0], OT_TILESET))
+	if (!CheckBaseObject(layer->tilemap, OT_TILEMAP))
 		return false;
 
 	tilemap = layer->tilemap;
@@ -480,12 +485,12 @@ bool TLN_GetLayerTile (int nlayer, int x, int y, TLN_TileInfo* info)
 	xpos = x % layer->width;
 	if (xpos < 0)
 		xpos += layer->width;
-	xtile = xpos / tileset->width;
-	srcx  = xpos % tileset->width;
+	xtile = xpos / tilemap->tilewidth;
+	srcx  = xpos % tilemap->tilewidth;
 	
 	if (layer->column)
 	{
-		column = x / tileset->width;
+		column = x / tilemap->tilewidth;
 		if (xpos!=0 && x>xpos)
 			column++;
 		column_offset = layer->column[column];
@@ -494,9 +499,9 @@ bool TLN_GetLayerTile (int nlayer, int x, int y, TLN_TileInfo* info)
 	ypos  = (y + column_offset) % layer->height;
 	if (ypos < 0)
 		ypos += layer->height;
-	srcy  = ypos % tileset->height;
+	srcy  = ypos % tilemap->tileheight;
 
-	ytile = ypos / tileset->height;
+	ytile = ypos / tilemap->tileheight;
 	tile = &tilemap->tiles[ytile*tilemap->cols + xtile];
 
 	memset (info, 0, sizeof(TLN_TileInfo));

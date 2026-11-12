@@ -232,6 +232,8 @@ TLN_Tilemap TLN_LoadTilemap (const char *filename, const char *layername)
 
 		/* create */
 		tilemap = TLN_CreateTilemap(loader.layer->height, loader.layer->width, (Tile*)loader.data, tmxinfo.bgcolor, NULL);
+		tilemap->tilewidth = tmxinfo.tilewidth;
+		tilemap->tileheight = tmxinfo.tileheight;
 		tilemap->id = loader.layer->id;
 		strncpy(tilemap->class_name, loader.layer->class_name, sizeof(tilemap->class_name) - 1);
 		tilemap->class_name[sizeof(tilemap->class_name) - 1] = '\0';

@@ -12,7 +12,8 @@ G_BEGIN_DECLS
 typedef enum {
   FALLING_PLATFORM = 100,
   FIRST_TRAP_TYPE = FALLING_PLATFORM,
-  SAW,
+  SAW = 101,
+  ROCK_HEAD = 102,
   LAST_TRAP_TYPE
 } TRAP_TYPE;
 
@@ -30,6 +31,7 @@ typedef struct {
 
 typedef struct {
   TTrapData data;
+  TLN_Sequence sequence; // Sprite sequence copied from this object's TSX.
 } TTrapPrivate;
 
 // 公开API，供外部调用

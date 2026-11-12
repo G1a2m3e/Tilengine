@@ -12,6 +12,7 @@ add_executable(my_jump_adventure
     collision_handler.c
     falling_platform.c
     saw.c
+    rock_head.c
     env_interaction.c
     )
 

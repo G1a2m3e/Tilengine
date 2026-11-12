@@ -340,8 +340,8 @@ TLN_Tilemap get_collision_tilemap(void) {
       continue;
     TLN_Tilemap map = TLN_GetLayerTilemap(layer);
     if (map && map->num_tilesets > 0 && map->tilesets[0] && map->cols > 0 &&
-        map->rows > 0 && TLN_GetTileWidth(map->tilesets[0]) > 0 &&
-        TLN_GetTileHeight(map->tilesets[0]) > 0)
+        map->rows > 0 && map->tilewidth > 0 &&
+        map->tileheight > 0)
       return map;
   }
   return NULL;
@@ -358,8 +358,8 @@ HitBox handle_maps_collision(HitBox src, float dx, float dy) {
     src.y += dy;
     return src;
   }
-  int tile_width = TLN_GetTileWidth(tilemap->tilesets[0]);
-  int tile_height = TLN_GetTileHeight(tilemap->tilesets[0]);
+  int tile_width = tilemap->tilewidth;
+  int tile_height = tilemap->tileheight;
 
   /* Swept bounds, including tiles touched exactly at the rectangle edges. */
   int first_col = (int)ceilf(fminf(src.x, src.x + dx) / tile_width) - 1;
