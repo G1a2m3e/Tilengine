@@ -21,4 +21,22 @@ extern int get_background_layer(void);
 
 extern const char *get_level_file_name(int level);
 
+typedef struct {
+  float x, y;
+} PathPoint;
+
+typedef enum { PATH_PINGPONG, PATH_LOOP } PathMode;
+
+typedef struct {
+  PathPoint *points; // World coordinates of the moving object's center.
+  int count;
+  float speed;      // Pixels per second; default 60.
+  PathMode mode;    // Default PATH_PINGPONG.
+} MotionPath;
+
+/* Initialize path to {0}; free it before loading another path into it.
+   Returns false for missing/invalid references or fewer than two distinct points. */
+extern bool load_object_path(int object_id, MotionPath *path);
+extern void free_object_path(MotionPath *path);
+
 #endif

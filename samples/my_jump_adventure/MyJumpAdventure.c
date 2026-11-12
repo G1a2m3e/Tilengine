@@ -1,10 +1,9 @@
 #include "../../src/LoadFile.h"
-#include "../../src/LoadTMX.h"
 #include "Tilengine.h"
 #include "game.h"
+#include "traps.h"
 #include "utils.h"
 #include <SDL2/SDL.h>
-#include "traps.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +20,6 @@
 #define BUTTON_MARGIN 3
 #define TRANSITION_MS 350
 
-static int current_level = 0;
 static int requested_level;
 static struct {
   TLN_Spriteset set;
@@ -34,51 +32,6 @@ static enum { PLAYING, CLOSING, SWITCHING, OPENING } transition_state;
 static void main_loop(uint32_t frame);
 static int world_width;
 static int world_height;
-
-static int get_level_sprite_count(const TMXInfo *info) {
-  int count = 0;
-  for (int i = 0; i < info->num_layers; ++i) {
-    if (info->layers[i].type == LAYER_OBJECT)
-      count += info->layers[i].num_objects;
-  }
-  return count;
-}
-
-static void load_level(int level) {
-  current_level = level;
-  TMXInfo info = {0};
-  LevelInfo level_info = {0};
-  if (!TMXLoad(get_level_file_name(current_level), &info)) {
-    fprintf(stderr, "读取地图失败\n");
-    exit(1);
-  }
-
-  world_width = info.width * info.tilewidth;
-  world_height = info.height * info.tileheight;
-  int num_sprites = get_level_sprite_count(&info);
-  if (!TLN_GetContext()) {
-    if (!TLN_Init(world_width, world_height, 32, TRANSITION_SPRITE + 1, 0)) {
-      fprintf(stderr, "Failed to initialize Tilengine\n");
-      exit(1);
-    }
-  } else if (info.num_layers > TLN_GetNumLayers() ||
-             num_sprites > BUTTON_SPRITE) {
-    fprintf(stderr,
-            "Insufficient capacity for level %d: layers %d/%d, sprites %d/%d\n",
-            current_level, info.num_layers, TLN_GetNumLayers(), num_sprites,
-            BUTTON_SPRITE);
-    exit(1);
-  }
-  if (!TLN_LoadWorld(get_level_file_name(current_level), 0)) {
-    fprintf(stderr, "Failed to load level %d: %s\n", current_level,
-            TLN_GetErrorString(TLN_GetLastError()));
-    exit(1);
-  }
-
-  level_info.player_name = "virtual_guy";
-  level_info.fruits_objectgroup_name = "fruits";
-  init_game(current_level, level_info);
-}
 
 void clear_all_sprites(void) {
   int count = TLN_GetNumSprites();
@@ -111,7 +64,8 @@ static bool level_exists(int level) {
 
 static void update_level_buttons(void) {
   for (int i = 0; i < 2; ++i) {
-    level_buttons[i].enabled = level_exists(current_level + (i == 0 ? -1 : 1));
+    level_buttons[i].enabled =
+        level_exists(get_current_level() + (i == 0 ? -1 : 1));
     TLN_SetSpriteBlendMode(BUTTON_SPRITE + i,
                            level_buttons[i].enabled ? BLEND_NONE : BLEND_MIX50,
                            0);
@@ -137,14 +91,15 @@ static void on_mouse_event(SDL_Event *event) {
   SDL_Window *window = SDL_GetWindowFromID(event->button.windowID);
   if (window)
     SDL_GetWindowSize(window, &window_width, &window_height);
-  int x = (event->button.x - (window_width - width) / 2) * TLN_GetWidth() / width;
-  int y =
-      (event->button.y - (window_height - height) / 2) * TLN_GetHeight() / height;
+  int x =
+      (event->button.x - (window_width - width) / 2) * TLN_GetWidth() / width;
+  int y = (event->button.y - (window_height - height) / 2) * TLN_GetHeight() /
+          height;
   for (int i = 0; i < 2; ++i) {
     if (level_buttons[i].enabled && y >= BUTTON_MARGIN &&
         y < BUTTON_MARGIN + BUTTON_HEIGHT && x >= level_buttons[i].x &&
         x < level_buttons[i].x + BUTTON_WIDTH) {
-      change_level(current_level + (i == 0 ? -1 : 1));
+      change_level(get_current_level() + (i == 0 ? -1 : 1));
       return;
     }
   }
@@ -231,5 +186,5 @@ static void main_loop(uint32_t frame) {
   bool switch_level = !update(frame);
   render(frame);
   if (switch_level)
-    change_level(current_level + 1);
+    change_level(get_current_level() + 1);
 }

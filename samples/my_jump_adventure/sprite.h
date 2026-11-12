@@ -14,6 +14,8 @@ G_DECLARE_DERIVABLE_TYPE(Sprite, sprite, T, SPRITE, GObject)
 
 struct _SpriteClass {
   GObjectClass parent_class;
+  // 对象 ID、位置及图集绑定完成后调用。
+  void (*sprite_ready)(Sprite *self);
   // 读取输入、决定移动意图、处理跳跃请求
   void (*sprite_pre_update)(Sprite *self, uint32_t elapsed);
   // 解决碰撞，确定实际位移和接触信息
@@ -29,6 +31,7 @@ typedef struct {
 
 typedef struct {
   int sprite_index;
+  int object_id;
   DrawRect rect;
   CollisionOffset hitbox_offset;
   gboolean active;

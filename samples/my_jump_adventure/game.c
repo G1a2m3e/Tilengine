@@ -5,8 +5,8 @@
 #include "Tilengine.h"
 #include "collision_handler.h"
 #include "env_interaction.h"
-#include "fruit.h"
 #include "falling_platform.h"
+#include "fruit.h"
 #include "sprite.h"
 #include "utils.h"
 #include <glib.h>
@@ -26,6 +26,7 @@ static int camera_y;
 static float camera_y_position;
 static uint32_t last_camera_ms;
 static bool camera_initialized;
+static int current_level = 0;
 
 static int clamp_camera(float position, int world_size, int screen_size) {
   int maximum = world_size - screen_size;
@@ -97,6 +98,51 @@ static void init_fruits(const char *fruits_objectgroup_name) {
   }
 }
 
+int get_current_level() { return current_level; }
+
+static int get_level_sprite_count(const TMXInfo *info) {
+  int count = 0;
+  for (int i = 0; i < info->num_layers; ++i) {
+    if (info->layers[i].type == LAYER_OBJECT)
+      count += info->layers[i].num_objects;
+  }
+  return count;
+}
+
+void load_level(int level) {
+  current_level = level;
+  TMXInfo info = {0};
+  LevelInfo level_info = {0};
+  if (!TMXLoad(get_level_file_name(current_level), &info)) {
+    fprintf(stderr, "读取地图失败\n");
+    exit(1);
+  }
+
+  world_width = info.width * info.tilewidth;
+  world_height = info.height * info.tileheight;
+  int num_sprites = get_level_sprite_count(&info);
+  if (!TLN_GetContext()) {
+    if (!TLN_Init(world_width, world_height, 32, 131, 0)) {
+      fprintf(stderr, "Failed to initialize Tilengine\n");
+      exit(1);
+    }
+  } else if (info.num_layers > TLN_GetNumLayers() || num_sprites > 130) {
+    fprintf(stderr,
+            "Insufficient capacity for level %d: layers %d/%d, sprites %d/%d\n",
+            current_level, info.num_layers, TLN_GetNumLayers(), num_sprites,
+            130);
+    exit(1);
+  }
+  if (!TLN_LoadWorld(get_level_file_name(current_level), 0)) {
+    fprintf(stderr, "Failed to load level %d: %s\n", current_level,
+            TLN_GetErrorString(TLN_GetLastError()));
+    exit(1);
+  }
+
+  level_info.player_name = "virtual_guy";
+  level_info.fruits_objectgroup_name = "fruits";
+  init_game(current_level, level_info);
+}
 void reset_game_timer(void) {
   last_update_ms = TLN_GetTicks();
   last_render_ms = TLN_GetTicks();
@@ -157,7 +203,8 @@ static void trap_post_update(uint32_t elapsed) {
     Sprite *sprite = T_SPRITE(g_ptr_array_index(traps, i));
     sprite_post_update(sprite, elapsed);
     if (get_sprite_data(sprite)->active && T_IS_FALLING_PLATFORM(sprite) &&
-        t_falling_platform_is_offscreen(T_FALLING_PLATFORM(sprite), world_height))
+        t_falling_platform_is_offscreen(T_FALLING_PLATFORM(sprite),
+                                        world_height))
       deactive_sprite(sprite);
   }
 }

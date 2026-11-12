@@ -9,6 +9,7 @@ typedef struct {
 G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE(Sprite, sprite, G_TYPE_OBJECT)
 
 static void sprite_class_init(SpriteClass *klass) {
+  klass->sprite_ready = NULL;
   klass->sprite_pre_update = NULL;
   klass->sprite_post_update = NULL;
   klass->sprite_render = NULL;
@@ -82,6 +83,7 @@ void spritelize(Sprite *self, TLN_Object *object, TLN_Spriteset sprite_set,
   TLN_SetSpriteSet(sprite_index, sprite_set);
   SpritePrivate *priv = sprite_get_instance_private(self);
   priv->data.sprite_index = sprite_index;
+  priv->data.object_id = object->id;
   priv->data.active = TRUE;
   priv->data.rect.x = object->x;
   priv->data.rect.y = object->y;
@@ -92,6 +94,9 @@ void spritelize(Sprite *self, TLN_Object *object, TLN_Spriteset sprite_set,
   TLN_SetSpriteFlags(sprite_index, object->flags);
   bind_sprite_to_object(sprite_index, object);
   object->visible = false;
+  SpriteClass *klass = T_SPRITE_GET_CLASS(self);
+  if (klass->sprite_ready)
+    klass->sprite_ready(self);
 }
 
 bool deactive_sprite(Sprite *self) {
